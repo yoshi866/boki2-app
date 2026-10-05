@@ -15,7 +15,8 @@
   --bg:#f3f5f7; --card:#ffffff; --text:#1f2933; --sub:#5f6b7a; --line:#e2e6ea;
   --accent:#0f766e; --accent-weak:#e0f2f1; --accent-text:#ffffff;
   --debit:#1d4ed8; --debit-weak:#eff4ff; --credit:#c2410c; --credit-weak:#fff4ed;
-  --ok:#15803d; --ok-weak:#e8f7ee; --yt:#c4302b; --yt-weak:#fdeceb; --ng:#dc2626; --ng-weak:#fdecec; --warn:#b45309; --warn-weak:#fff7e0;
+  --ok:#15803d; --ok-weak:#e8f7ee; --ng:#dc2626; --ng-weak:#fdecec; --warn:#b45309; --warn-weak:#fff7e0;
+  --yt:#c4302b; --yt-weak:#fdeceb; --gold:#d97706; --gold-weak:#fef3c7; --violet:#7c3aed; --violet-weak:#f1ebff;
   --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
 }
 @media (prefers-color-scheme: dark){
@@ -23,7 +24,8 @@
     --bg:#111518; --card:#1b2126; --text:#e6e9ec; --sub:#9aa5b1; --line:#2d353c;
     --accent:#2dd4bf; --accent-weak:#123a37; --accent-text:#06201d;
     --debit:#7aa2ff; --debit-weak:#18223a; --credit:#ff9a62; --credit-weak:#3a2216;
-    --ok:#4ade80; --ok-weak:#123222; --yt:#ff7b72; --yt-weak:#3a1a19; --ng:#f87171; --ng-weak:#3a1717; --warn:#fbbf24; --warn-weak:#3a2e10;
+    --ok:#4ade80; --ok-weak:#123222; --ng:#f87171; --ng-weak:#3a1717; --warn:#fbbf24; --warn-weak:#3a2e10;
+    --yt:#ff7b72; --yt-weak:#3a1a19; --gold:#fbbf24; --gold-weak:#3a2e10; --violet:#b69cff; --violet-weak:#2a2140;
     --shadow:none;
   }
 }
@@ -37,85 +39,146 @@ body{
 }
 #view{max-width:640px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom))}
 body.quiz #view{padding-bottom:calc(32px + env(safe-area-inset-bottom))}
-h1{font-size:20px;margin:4px 0 2px}
+h1{font-size:20px;margin:0 0 2px;line-height:1.35}
 h2{font-size:16px;margin:0 0 10px}
 .sub{color:var(--sub);font-size:13px}
-.card{background:var(--card);border-radius:14px;padding:16px;margin:0 0 14px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.card{background:var(--card);border-radius:16px;padding:16px;margin:0 0 14px;box-shadow:var(--shadow);border:1px solid var(--line)}
 .center{text-align:center}
 button{font:inherit;color:inherit;cursor:pointer}
-.btn{display:block;width:100%;border:none;border-radius:12px;padding:14px 16px;font-size:16px;font-weight:700;background:var(--line);color:var(--text)}
+.btn{display:block;width:100%;border:none;border-radius:14px;padding:14px 16px;font-size:16px;font-weight:700;background:var(--line);color:var(--text);transition:transform .08s}
+.btn:active{transform:scale(.98)}
 .btn.primary{background:var(--accent);color:var(--accent-text)}
 .btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--sub)}
 .btn.warn{background:var(--warn-weak);color:var(--warn)}
 .btn.danger{background:var(--ng-weak);color:var(--ng)}
 .btn:disabled{opacity:.45;cursor:default}
 .btn+.btn{margin-top:10px}
-.actions{display:flex;gap:10px}
+.actions{display:flex;gap:8px}
 .actions .btn{margin:0}
-.actions .btn.ghost{flex:0 0 38%}
+.actions .btn.ghost{flex:0 0 auto;width:auto;padding:14px 12px;font-size:14px}
 .link{background:none;border:none;color:var(--sub);padding:6px 0;font-size:14px}
 
-/* home */
-.hero{display:flex;gap:10px;margin-bottom:14px}
-.stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center;box-shadow:var(--shadow)}
-.stat b{display:block;font-size:22px;line-height:1.3}
-.stat span{font-size:11px;color:var(--sub)}
+/* ---------- home ---------- */
+.hello{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+.hello .sub{margin:0}
+.lvcard{display:flex;align-items:center;gap:12px}
+.lvbadge{flex:0 0 52px;height:52px;border-radius:14px;background:var(--violet-weak);color:var(--violet);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;line-height:1.1}
+.lvbadge small{font-size:10px;font-weight:700}
+.lvbadge b{font-size:20px}
+.lvbody{flex:1;min-width:0}
+.lvtitle{font-weight:800;font-size:15px}
+.xpbar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:6px 0 2px}
+.xpbar span{display:block;height:100%;background:linear-gradient(90deg,var(--violet),#c084fc);border-radius:4px;transition:width .6s}
+.today{display:flex;align-items:center;gap:14px}
+.ring{position:relative;flex:0 0 84px;height:84px}
+.ring svg{width:84px;height:84px;transform:rotate(-90deg)}
+.ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.ring .num b{font-size:22px}
+.ring .num span{font-size:10px;color:var(--sub)}
+.today-r{flex:1;min-width:0}
+.kpis{display:flex;gap:14px;margin-bottom:6px}
+.kpi b{font-size:18px;display:block;line-height:1.2}
+.kpi span{font-size:11px;color:var(--sub)}
+.week{display:flex;gap:5px;align-items:flex-end;height:44px}
+.week div{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%;justify-content:flex-end}
+.week i{display:block;width:100%;max-width:18px;border-radius:4px;background:var(--line);min-height:4px}
+.week i.on{background:var(--accent)}
+.week i.goal{background:var(--gold)}
+.week span{font-size:9px;color:var(--sub);line-height:1}
+.week .t span{color:var(--text);font-weight:800}
+.bigbtn{display:flex;align-items:center;gap:12px;text-align:left;padding:16px 18px;border-radius:18px;margin-bottom:12px;box-shadow:0 4px 14px rgba(15,118,110,.25)}
+.bigbtn .ic{font-size:26px;line-height:1}
+.bigbtn b{display:block;font-size:18px}
+.bigbtn small{display:block;font-size:12px;font-weight:600;opacity:.85}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.quick button{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;text-align:left;box-shadow:var(--shadow);transition:transform .08s;position:relative}
+.quick button:active{transform:scale(.97)}
+.quick button:disabled{opacity:.5}
+.quick .ic{font-size:22px;line-height:1.2;display:block}
+.quick b{display:block;font-size:15px;margin-top:2px}
+.quick small{display:block;font-size:11px;color:var(--sub)}
+.quick .dot{position:absolute;top:10px;right:10px;background:var(--ng);color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:0 7px;line-height:18px}
+details.card>summary{list-style:none;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:"＋";color:var(--sub)}
+details.card[open]>summary::after{content:"－"}
+details.card[open]>summary{margin-bottom:12px}
 .seg{display:flex;background:var(--bg);border-radius:10px;padding:3px;gap:3px;margin-bottom:12px;border:1px solid var(--line)}
-.seg button{flex:1;border:none;background:transparent;border-radius:8px;padding:9px 4px;font-size:14px;color:var(--sub)}
+.seg button{flex:1;border:none;background:transparent;border-radius:8px;padding:9px 4px;font-size:14px;color:var(--sub);white-space:nowrap}
 .seg button.on{background:var(--card);color:var(--text);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .label{font-size:13px;color:var(--sub);margin:0 0 6px;font-weight:600}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .chip{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--sub)}
 .chip.on{border-color:var(--accent);background:var(--accent-weak);color:var(--text);font-weight:700}
 .grp{font-size:12px;font-weight:700;color:var(--sub);margin:4px 0 6px}
-.review{display:flex;align-items:center;gap:12px}
-.review .num{font-size:28px;font-weight:800;color:var(--warn);min-width:48px;text-align:center}
-.review .num.zero{color:var(--sub)}
-.review div{flex:1}
+.intro{border:2px solid var(--accent);background:var(--accent-weak)}
+.intro ol{margin:6px 0 12px;padding-left:1.3em;font-size:14px;line-height:1.8}
 .note{font-size:12px;color:var(--sub);text-align:center;margin:6px 0 0}
 
-/* quiz */
-.qtop{display:flex;justify-content:space-between;align-items:center}
+/* ---------- quiz ---------- */
+.qtop{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.qtop-r{display:flex;align-items:center;gap:8px}
 .prog{font-weight:700;font-size:14px;color:var(--sub)}
+.iconbtn{border:1.5px solid var(--line);background:var(--card);border-radius:999px;width:32px;height:32px;font-weight:800;color:var(--sub);padding:0}
+.combo{font-weight:800;color:var(--gold);font-size:14px;animation:pop .35s}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;color:var(--sub);font-size:14px}
 .bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:4px 0 14px}
 .bar span{display:block;height:100%;background:var(--accent);transition:width .3s}
-.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center}
 .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--line);color:var(--sub)}
 .tag.g1{background:var(--debit-weak);color:var(--debit)}
 .tag.g2{background:var(--credit-weak);color:var(--credit)}
 .tag.warn{background:var(--warn-weak);color:var(--warn)}
+.tag.new{background:var(--violet-weak);color:var(--violet)}
+.stars{font-size:12px;color:var(--gold);letter-spacing:1px;margin-left:auto}
+.stars .off{color:var(--line)}
 .qtext{margin:0;font-size:16px;line-height:1.75}
 .hist{margin:8px 0 0;font-size:12px;color:var(--sub)}
+.pal-h{font-size:12px;color:var(--sub);margin:0 0 6px;font-weight:600}
+.palette{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.pchip{border:1.5px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 10px;font-size:14px;font-weight:600;line-height:1.3;transition:transform .08s}
+.pchip:active{transform:scale(.95);border-color:var(--accent)}
 .side{border-radius:12px;padding:10px;margin-bottom:10px}
 .side.d{background:var(--debit-weak)}
 .side.c{background:var(--credit-weak)}
 .sh{font-weight:800;font-size:14px;margin:0 0 6px}
+.sh small{font-weight:600;font-size:11px;opacity:.8}
 .side.d .sh{color:var(--debit)}
 .side.c .sh{color:var(--credit)}
 .row{display:flex;gap:6px;margin-bottom:6px}
-.row select,.row input{
-  font:inherit;font-size:16px;border:1.5px solid var(--line);border-radius:9px;background:var(--card);color:var(--text);
-  padding:9px 8px;min-width:0;height:44px;
+.accbtn,.row input{
+  font:inherit;font-size:16px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);
+  padding:8px;min-width:0;height:46px;
 }
-.row select{flex:1.35;-webkit-appearance:none;appearance:none;
-  background-image:linear-gradient(45deg,transparent 50%,var(--sub) 50%),linear-gradient(135deg,var(--sub) 50%,transparent 50%);
-  background-position:calc(100% - 14px) 19px,calc(100% - 9px) 19px;background-size:5px 5px;background-repeat:no-repeat;padding-right:22px}
+.accbtn{flex:1.35;text-align:left;font-size:14px;font-weight:700;line-height:1.25;overflow:hidden}
+.accbtn.empty{color:var(--sub);font-weight:500}
+.row.active .accbtn{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak)}
+.row.active .accbtn.empty::after{content:" ← ここに入ります";font-size:11px;color:var(--accent)}
 .row input{flex:1;text-align:right}
-.row select:focus,.row input:focus{outline:none;border-color:var(--accent)}
-.row .del{flex:0 0 32px;border:none;background:transparent;color:var(--sub);font-size:18px;padding:0}
+.row input:focus{outline:none;border-color:var(--accent)}
+.row .del{flex:0 0 28px;border:none;background:transparent;color:var(--sub);font-size:18px;padding:0}
 .add{border:1.5px dashed var(--line);background:transparent;border-radius:9px;width:100%;padding:7px;font-size:13px;color:var(--sub)}
-.locked select,.locked input{opacity:.75}
-.locked .del,.locked .add{display:none}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:50;max-width:90%;opacity:0;transition:opacity .2s;pointer-events:none}
+.locked .palette,.locked .pal-h,.locked .del,.locked .add{display:none}
+.locked .accbtn,.locked input{opacity:.8}
+.hintcard{background:var(--gold-weak);border-color:transparent}
+.hintcard b{color:var(--gold)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:60;max-width:90%;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
 
-/* feedback */
+/* ---------- feedback ---------- */
 .fb{border-width:2px}
 .fb.ok{border-color:var(--ok)}
 .fb.ng{border-color:var(--ng)}
-.verdict{font-size:22px;font-weight:800;margin:0 0 8px}
-.fb.ok .verdict{color:var(--ok)}
-.fb.ng .verdict{color:var(--ng)}
+.verdict{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 8px}
+.verdict b{font-size:24px;font-weight:800;animation:pop .4s}
+.fb.ok .verdict b{color:var(--ok)}
+.fb.ng .verdict b{color:var(--ng)}
+.xpgain{font-weight:800;color:var(--violet);font-size:14px;animation:rise .6s}
+.combo-msg{font-weight:800;color:var(--gold);font-size:14px}
+@keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes rise{0%{transform:translateY(8px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes shake{0%,100%{transform:none}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.shake{animation:shake .35s}
 .jt{width:100%;border-collapse:collapse;table-layout:fixed;margin:4px 0 12px;font-size:14px}
 .jt th{font-size:12px;padding:4px 6px;text-align:left}
 .jt th:first-child{color:var(--debit);background:var(--debit-weak)}
@@ -130,24 +193,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .jlabel{font-size:12px;font-weight:700;color:var(--sub);margin:6px 0 0}
 .expl{background:var(--bg);border-radius:10px;padding:12px;font-size:14px;line-height:1.75;margin:0}
 .expl b{color:var(--accent)}
-
-/* result list */
-.big{font-size:44px;font-weight:800;line-height:1.2}
-.rlist{list-style:none;margin:0;padding:0}
-.rlist li{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;align-items:flex-start}
-.rlist li:last-child{border-bottom:none}
-.mk{font-weight:800;font-size:16px;line-height:1.3;min-width:18px}
-.mk.o{color:var(--ok)} .mk.x{color:var(--ng)}
-
-/* stats */
-.cat{padding:10px 0;border-bottom:1px solid var(--line)}
-.cat:last-child{border-bottom:none}
-.cat-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.cat-h b{font-size:14px}
-.cat-h .rate{font-weight:800;font-size:15px}
-.meter{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:6px 0 4px}
-.meter span{display:block;height:100%;border-radius:4px}
-.cat-f{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--sub)}
 .point{background:var(--accent-weak);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;line-height:1.7;margin:4px 0 10px}
 .point span,.trap span{display:block;font-size:12px;font-weight:800;margin-bottom:2px}
 .point span{color:var(--accent)}
@@ -164,12 +209,54 @@ button{font:inherit;color:inherit;cursor:pointer}
 .yts{display:flex;flex-wrap:wrap;gap:6px}
 .yt{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:13px;font-weight:700;color:var(--yt);background:var(--yt-weak);border-radius:8px;padding:7px 12px}
 .yt svg{width:18px;height:18px;flex:0 0 18px}
+
+/* ---------- ○× ---------- */
+.oxq{font-size:15px;line-height:1.7;margin:0 0 10px}
+.oxask{font-weight:800;font-size:14px;margin:4px 0 6px;color:var(--sub)}
+.oxbtns{display:flex;gap:10px}
+.oxbtns button{flex:1;border:none;border-radius:18px;padding:18px 0;font-size:30px;font-weight:800;line-height:1;transition:transform .08s}
+.oxbtns button:active{transform:scale(.95)}
+.oxbtns small{display:block;font-size:12px;margin-top:6px}
+.oxo{background:var(--ok-weak);color:var(--ok)}
+.oxx{background:var(--ng-weak);color:var(--ng)}
+.card.flash-ok{border-color:var(--ok);box-shadow:0 0 0 3px var(--ok-weak)}
+.card.flash-ng{border-color:var(--ng);box-shadow:0 0 0 3px var(--ng-weak)}
+
+/* ---------- result ---------- */
+.big{font-size:44px;font-weight:800;line-height:1.2;animation:pop .5s}
+.rlist{list-style:none;margin:0;padding:0}
+.rlist li{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;align-items:flex-start}
+.rlist li:last-child{border-bottom:none}
+.mk{font-weight:800;font-size:16px;line-height:1.3;min-width:18px}
+.mk.o{color:var(--ok)} .mk.x{color:var(--ng)}
+.gain{display:flex;justify-content:center;gap:18px;margin-top:10px}
+.gain div b{display:block;font-size:20px}
+.gain div span{font-size:11px;color:var(--sub)}
+
+/* ---------- stats ---------- */
+.cat{padding:10px 0;border-bottom:1px solid var(--line)}
+.cat:last-child{border-bottom:none}
+.cat-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.cat-h b{font-size:14px}
+.cat-h .rate{font-weight:800;font-size:15px}
+.meter{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:6px 0 4px}
+.meter span{display:block;height:100%;border-radius:4px}
+.cat-f{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
+.mini{border:1.5px solid var(--accent);color:var(--accent);background:transparent;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;white-space:nowrap}
 a.mini{text-decoration:none;display:inline-block}
-.mini{border:1.5px solid var(--accent);color:var(--accent);background:transparent;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700}
 .r-good{color:var(--ok)} .r-mid{color:var(--warn)} .r-bad{color:var(--ng)} .r-none{color:var(--sub)}
 .bg-good{background:var(--ok)} .bg-mid{background:var(--warn)} .bg-bad{background:var(--ng)}
+.hero{display:flex;gap:8px;margin-bottom:14px}
+.stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 4px;text-align:center;box-shadow:var(--shadow)}
+.stat b{display:block;font-size:20px;line-height:1.3}
+.stat span{font-size:11px;color:var(--sub)}
+.badges{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.badge{border-radius:12px;background:var(--bg);padding:8px 2px;text-align:center;font-size:10px;line-height:1.3;color:var(--sub)}
+.badge i{display:block;font-style:normal;font-size:26px;line-height:1.3}
+.badge.on{background:var(--gold-weak);color:var(--text);font-weight:700}
+.badge:not(.on) i{filter:grayscale(1);opacity:.35}
 
-/* settings */
+/* ---------- settings ---------- */
 .set-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
 .set-row:last-child{border-bottom:none}
 .set-row .t{font-weight:600;font-size:15px}
@@ -184,12 +271,29 @@ input[type=date]{font:inherit;font-size:16px;border:1.5px solid var(--line);bord
 textarea{width:100%;min-height:110px;font-family:ui-monospace,Menlo,monospace;font-size:12px;border:1.5px solid var(--line);border-radius:9px;padding:8px;background:var(--bg);color:var(--text)}
 .help{font-size:14px;line-height:1.8;padding-left:1.2em;margin:0}
 
-/* nav */
+/* ---------- modal / celebration ---------- */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;display:none;align-items:flex-end;justify-content:center}
+#modal.show{display:flex}
+#modal .sheet{background:var(--card);width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));animation:up .25s}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.basics{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0 12px}
+.basics th,.basics td{padding:8px;border:1px solid var(--line);text-align:center}
+.basics th:first-child{background:var(--debit-weak);color:var(--debit)}
+.basics th:last-child{background:var(--credit-weak);color:var(--credit)}
+#celebrate{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);padding:24px}
+#celebrate.show{display:flex}
+#celebrate .box{background:var(--card);border-radius:22px;padding:24px 20px;text-align:center;max-width:320px;width:100%;animation:pop .4s}
+#celebrate .ic{font-size:56px;line-height:1.2}
+#celebrate h2{margin:6px 0 4px;font-size:20px}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:55}
+
+/* ---------- nav ---------- */
 #nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:20}
 #nav button{flex:1;border:none;background:none;padding:8px 0 10px;font-size:11px;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:2px}
 #nav button svg{width:24px;height:24px}
 #nav button.on{color:var(--accent);font-weight:700}
 body.quiz #nav{display:none}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -200,6 +304,9 @@ body.quiz #nav{display:none}
   <button data-act="go" data-v="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>設定</button>
 </nav>
 <div class="toast" id="toast"></div>
+<div id="modal"></div>
+<div id="celebrate"></div>
+<canvas id="confetti"></canvas>
 
 <script>
 /* =========================================================
@@ -676,12 +783,21 @@ const QMAP = Object.fromEntries(QS.map(q => [q.id, q]));
 const CMAP = Object.fromEntries(CATS.map(c => [c.id, c]));
 
 function defaults(){
-  return {v:1, rec:{}, days:{}, set:{amount:true, scope:'all', cats:[], count:10, exam:''}};
+  return {v:2, rec:{}, days:{}, xp:0, badges:{}, ox:{n:0, c:0}, best:{combo:0, perfect:false, oxTime:0}, seenIntro:false,
+          set:{amount:true, scope:'all', cats:[], count:10, exam:'', goal:10}};
 }
 function load(){
   try{
     const s = JSON.parse(localStorage.getItem(KEY));
-    if(s && s.rec){ const d = defaults(); return {...d, ...s, set:{...d.set, ...(s.set||{})}}; }
+    if(s && s.rec){
+      const d = defaults();
+      const m = {...d, ...s, set:{...d.set, ...(s.set||{})}, best:{...d.best, ...(s.best||{})}, ox:{...d.ox, ...(s.ox||{})}, badges:s.badges||{}};
+      if(typeof s.xp !== 'number'){ // 旧バージョンの記録からXPを引き継ぐ
+        m.xp = Object.values(s.rec).reduce((a, r) => a + r.c*10 + (r.n - r.c)*2, 0);
+        m.seenIntro = Object.keys(s.rec).length > 0;
+      }
+      return m;
+    }
   }catch(e){}
   return defaults();
 }
@@ -689,20 +805,100 @@ let S = load();
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('記録を保存できませんでした（プライベートブラウズでは保存されません）'); } }
 
 function todayKey(d = new Date()){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function countToday(){ const t = todayKey(); S.days[t] = (S.days[t]||0) + 1; }
 function record(id, ok){
   const r = S.rec[id] || {n:0, c:0};
-  r.n++; if(ok) r.c++; r.last = ok; r.ts = Date.now();
+  if(r.s === undefined) r.s = r.last ? 1 : 0;
+  r.n++; if(ok) r.c++; r.last = ok; r.s = ok ? r.s + 1 : 0; r.ts = Date.now();
   S.rec[id] = r;
-  const t = todayKey(); S.days[t] = (S.days[t]||0) + 1;
-  save();
+  countToday(); save();
 }
 function wrongIds(){ return QS.filter(q => S.rec[q.id] && S.rec[q.id].last === false).map(q => q.id); }
+function stars(id){ const r = S.rec[id]; if(!r) return 0; return Math.min(r.s !== undefined ? r.s : (r.last ? 1 : 0), 3); }
+function masteredCount(){ return QS.filter(q => stars(q.id) >= 3).length; }
+function totalAnswers(){ return Object.values(S.days).reduce((a, b) => a + b, 0); }
 function streak(){
   let n = 0; const d = new Date();
   if(!S.days[todayKey(d)]) d.setDate(d.getDate()-1);
   while(S.days[todayKey(d)]){ n++; d.setDate(d.getDate()-1); }
   return n;
 }
+
+/* ---------- レベル ---------- */
+const TITLES = [[1,'簿記ビギナー'],[3,'仕訳見習い'],[5,'仕訳の使い手'],[8,'2級チャレンジャー'],[12,'合格圏内'],[16,'仕訳マスター'],[22,'簿記2級の達人']];
+function lvInfo(xp){
+  let lv = 1, need = 100, rest = xp;
+  while(rest >= need){ rest -= need; lv++; need = 100 + (lv-1)*20; }
+  const title = TITLES.filter(t => lv >= t[0]).pop()[1];
+  return {lv, cur:rest, need, title};
+}
+function addXP(n){
+  const before = lvInfo(S.xp).lv;
+  S.xp += n;
+  const after = lvInfo(S.xp);
+  if(after.lv > before) queueCelebrate('🎉', `レベルアップ！ Lv.${after.lv}`, `称号「${after.title}」`, true);
+}
+
+/* ---------- バッジ ---------- */
+const BADGES = [
+  {id:'first',    i:'🌱', n:'はじめの一歩', d:'はじめて問題に答えた',          t:()=>totalAnswers()>=1},
+  {id:'q50',      i:'📗', n:'50問突破',     d:'のべ50問に回答',                t:()=>totalAnswers()>=50},
+  {id:'q200',     i:'📘', n:'200問突破',    d:'のべ200問に回答',               t:()=>totalAnswers()>=200},
+  {id:'q500',     i:'📚', n:'500問突破',    d:'のべ500問に回答',               t:()=>totalAnswers()>=500},
+  {id:'combo5',   i:'🔥', n:'5連続正解',    d:'5問連続で正解',                 t:()=>S.best.combo>=5},
+  {id:'combo10',  i:'💥', n:'10連続正解',   d:'10問連続で正解',                t:()=>S.best.combo>=10},
+  {id:'perfect',  i:'💯', n:'パーフェクト', d:'5問以上のセットで全問正解',     t:()=>S.best.perfect},
+  {id:'goal',     i:'🎯', n:'目標達成',     d:'1日の目標問題数をクリア',       t:()=>(S.days[todayKey()]||0)>=S.set.goal},
+  {id:'streak3',  i:'📅', n:'3日連続',      d:'3日続けて学習',                 t:()=>streak()>=3},
+  {id:'streak7',  i:'🗓️', n:'1週間連続',    d:'7日続けて学習',                 t:()=>streak()>=7},
+  {id:'streak30', i:'👑', n:'30日連続',     d:'30日続けて学習',                t:()=>streak()>=30},
+  {id:'allcat',   i:'🧭', n:'全分野制覇',   d:'全15分野に挑戦',                t:()=>CATS.every(c=>QS.some(q=>q.cat===c.id && S.rec[q.id]))},
+  {id:'master10', i:'⭐', n:'10問マスター', d:'10問を★3（3回連続正解）に',     t:()=>masteredCount()>=10},
+  {id:'masterAll',i:'🏆', n:'全問マスター', d:'全問を★3に',                    t:()=>masteredCount()>=QS.length},
+  {id:'ox30',     i:'⚡', n:'○×の鬼',       d:'○×スピードで30問正解',          t:()=>S.ox.c>=30},
+  {id:'review10', i:'🩹', n:'リベンジ',     d:'復習モードで10問正解',          t:()=>(S.best.revenge||0)>=10},
+];
+function checkBadges(){
+  BADGES.forEach(b => {
+    if(!S.badges[b.id] && b.t()){
+      S.badges[b.id] = Date.now();
+      if(sess) sess.newBadges.push(b.id);
+      queueCelebrate(b.i, `バッジ獲得！「${b.n}」`, b.d, false);
+    }
+  });
+  save();
+}
+
+/* ---------- お祝い演出 ---------- */
+const celebQ = [];
+function queueCelebrate(icon, title, sub, big){ celebQ.push({icon, title, sub, big}); }
+function flushCelebrate(){
+  const el = document.getElementById('celebrate');
+  if(el.classList.contains('show') || !celebQ.length) return;
+  const c = celebQ.shift();
+  el.innerHTML = `<div class="box"><div class="ic">${c.icon}</div><h2>${esc(c.title)}</h2><p class="sub" style="margin:0 0 16px">${esc(c.sub)}</p><button class="btn primary" data-act="closeCeleb">やったね！</button></div>`;
+  el.classList.add('show');
+  confetti(c.big ? 140 : 70); buzz([20, 40, 20]);
+}
+function confetti(n = 80){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cv = document.getElementById('confetti'), ctx = cv.getContext('2d');
+  const W = cv.width = innerWidth, H = cv.height = innerHeight;
+  const cols = ['#0f766e','#2dd4bf','#f59e0b','#ef4444','#7c3aed','#3b82f6','#22c55e'];
+  const ps = Array.from({length:n}, () => ({x:W/2 + (Math.random()-.5)*W*.3, y:H*.35, vx:(Math.random()-.5)*12, vy:-Math.random()*12-4,
+    s:Math.random()*6+4, r:Math.random()*6, vr:(Math.random()-.5)*.3, c:cols[Math.floor(Math.random()*cols.length)]}));
+  let frames = 0;
+  (function tick(){
+    ctx.clearRect(0, 0, W, H);
+    let alive = 0;
+    ps.forEach(p => {
+      p.vy += .35; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      if(p.y < H + 20){ alive++; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.s/2, -p.s/4, p.s, p.s/2); ctx.restore(); }
+    });
+    if(alive && ++frames < 240) requestAnimationFrame(tick); else ctx.clearRect(0, 0, W, H);
+  })();
+}
+function buzz(p){ try{ navigator.vibrate && navigator.vibrate(p); }catch(e){} }
 
 /* =========================================================
    ユーティリティ
@@ -711,11 +907,34 @@ const view = document.getElementById('view');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const yen = n => Number(n).toLocaleString('ja-JP');
 const plain = html => html.replace(/<[^>]+>/g, '');
+const pick = a => a[Math.floor(Math.random()*a.length)];
 function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 let toastTimer;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'), 2200); }
 function rateClass(r){ return r===null ? 'none' : r>=80 ? 'good' : r>=60 ? 'mid' : 'bad'; }
 function merge(lines){ const m=new Map(); lines.forEach(([a,v])=>m.set(a,(m.get(a)||0)+v)); return m; }
+function sameMap(a, b, useAmt){
+  if(a.size !== b.size) return false;
+  for(const [k,v] of a){ if(!b.has(k)) return false; if(useAmt && b.get(k)!==v) return false; }
+  return true;
+}
+function starHTML(id){ const s = stars(id); return `<span class="stars" title="習熟度">${'★'.repeat(s)}<span class="off">${'★'.repeat(3-s)}</span></span>`; }
+
+/* ---------- おすすめ出題（苦手・復習時期・未学習を優先） ---------- */
+const DAY = 86400000, GAP = [0, 1, 3, 7, 14];
+function smartPick(n, pool = QS){
+  const now = Date.now();
+  return pool.map(q => {
+    const r = S.rec[q.id]; let w;
+    if(!r) w = 1.6;                       // 未学習
+    else if(r.last === false) w = 3;      // 前回まちがえた
+    else {
+      const s = Math.min(r.s !== undefined ? r.s : 1, 4);
+      w = (now - (r.ts||0) >= GAP[s]*DAY) ? (s >= 3 ? 1.2 : 2) : 0.15; // 復習のタイミングが来たか
+    }
+    return {id:q.id, k:Math.pow(Math.random(), 1/w)};
+  }).sort((a, b) => b.k - a.k).slice(0, n).map(o => o.id);
+}
 
 /* =========================================================
    画面切り替え
@@ -723,7 +942,8 @@ function merge(lines){ const m=new Map(); lines.forEach(([a,v])=>m.set(a,(m.get(
 let cur = 'home';
 function go(v){
   cur = v;
-  document.body.classList.toggle('quiz', v==='quiz' || v==='done');
+  clearInterval(oxTimer);
+  document.body.classList.toggle('quiz', ['quiz','done','ox'].includes(v));
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v===v));
   ({home:renderHome, stats:renderStats, settings:renderSettings})[v]?.();
   window.scrollTo(0,0);
@@ -737,31 +957,76 @@ function scopePool(){
   if(s.scope==='custom') return QS.filter(q => s.cats.includes(q.cat));
   return QS;
 }
+function greeting(){
+  const h = new Date().getHours();
+  const g = h < 5 ? '夜ふかしおつかれさま' : h < 11 ? 'おはようございます' : h < 18 ? 'こんにちは' : 'こんばんは';
+  const done = S.days[todayKey()] || 0;
+  const msg = done >= S.set.goal ? '今日の目標達成！🎉 余裕があればもう少しだけ' :
+              done > 0 ? `今日の目標まであと${S.set.goal - done}問` :
+              pick(['1問だけでもOK。さっそくやってみよう','スキマ時間に1問どう？','今日も仕訳を1つ覚えよう']);
+  return {g, msg};
+}
+function ringSVG(val, max){
+  const r = 36, c = 2*Math.PI*r, p = Math.min(val/max, 1);
+  const col = val >= max ? 'var(--gold)' : 'var(--accent)';
+  return `<svg viewBox="0 0 84 84"><circle cx="42" cy="42" r="${r}" fill="none" stroke="var(--line)" stroke-width="8"/>
+    <circle cx="42" cy="42" r="${r}" fill="none" stroke="${col}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}"/></svg>`;
+}
+function weekHTML(){
+  const wd = '日月火水木金土', d = new Date(); d.setDate(d.getDate()-6);
+  const days = Array.from({length:7}, () => { const k = todayKey(d), o = {n:S.days[k]||0, w:wd[d.getDay()]}; d.setDate(d.getDate()+1); return o; });
+  const max = Math.max(S.set.goal, ...days.map(x => x.n));
+  return `<div class="week">${days.map((x, i) => `<div class="${i===6?'t':''}"><i class="${x.n>=S.set.goal?'goal':x.n?'on':''}" style="height:${Math.max(4, x.n/max*34)}px"></i><span>${x.w}</span></div>`).join('')}</div>`;
+}
 function renderHome(){
-  const s = S.set;
-  const answered = Object.keys(S.rec).filter(id => QMAP[id]).length;
-  let tot=0, ok=0; Object.entries(S.rec).forEach(([id,r]) => { if(QMAP[id]){ tot+=r.n; ok+=r.c; } });
-  const wr = wrongIds().length;
+  const s = S.set, lv = lvInfo(S.xp), {g, msg} = greeting();
+  const today = S.days[todayKey()] || 0, wr = wrongIds().length;
   let examHtml = '';
   if(s.exam){
     const diff = Math.ceil((new Date(s.exam+'T00:00:00') - new Date(todayKey()+'T00:00:00'))/86400000);
-    examHtml = diff>=0 ? `<p class="sub" style="margin:0 0 12px">🎯 試験日まで <b style="color:var(--accent);font-size:18px">あと${diff}日</b></p>` : '';
+    if(diff >= 0) examHtml = `<div class="kpi"><b>${diff}<small style="font-size:11px">日</small></b><span>試験まで</span></div>`;
   }
   const poolN = scopePool().length;
-  const catChips = ['商業','工業'].map(g => `<div class="grp">${g}簿記</div><div class="chips">${
-    CATS.filter(c=>c.grp===g).map(c=>`<button class="chip ${s.cats.includes(c.id)?'on':''}" data-act="cat" data-id="${c.id}">${esc(c.name)}</button>`).join('')}</div>`).join('');
+  const catChips = ['商業','工業'].map(gr => `<div class="grp">${gr}簿記</div><div class="chips">${
+    CATS.filter(c=>c.grp===gr).map(c=>`<button class="chip ${s.cats.includes(c.id)?'on':''}" data-act="cat" data-id="${c.id}">${esc(c.name)}</button>`).join('')}</div>`).join('');
   view.innerHTML = `
-    <h1>簿記2級 仕訳トレーニング</h1>
-    <p class="sub" style="margin:0 0 12px">全${QS.length}問・商業簿記／工業簿記</p>
-    ${examHtml}
-    <div class="hero">
-      <div class="stat"><b>${S.days[todayKey()]||0}</b><span>今日の回答</span></div>
-      <div class="stat"><b>${streak()}</b><span>連続日数</span></div>
-      <div class="stat"><b>${tot?Math.round(ok/tot*100)+'%':'-'}</b><span>正答率</span></div>
-      <div class="stat"><b>${answered}<small style="font-size:12px">/${QS.length}</small></b><span>学習済み</span></div>
+    <div class="hello"><div><p class="sub">${g}</p><h1>簿記2級 仕訳トレーニング</h1><p class="sub">${esc(msg)}</p></div></div>
+    ${S.seenIntro ? '' : `
+    <div class="card intro">
+      <h2>👋 はじめまして！</h2>
+      <ol>
+        <li>「サクッと5問」を押す</li>
+        <li>勘定科目を<b>タップ</b>して、借方・貸方に入れる</li>
+        <li>答え合わせ → 解説と動画で復習</li>
+      </ol>
+      <div class="actions"><button class="btn ghost" data-act="basics">仕訳のきほん</button><button class="btn primary" data-act="introOk">はじめる</button></div>
+    </div>`}
+    <div class="card lvcard" data-act="go" data-v="stats" role="button">
+      <div class="lvbadge"><small>Lv.</small><b>${lv.lv}</b></div>
+      <div class="lvbody"><div class="lvtitle">${esc(lv.title)}</div>
+        <div class="xpbar"><span style="width:${lv.cur/lv.need*100}%"></span></div>
+        <div class="sub" style="font-size:11px">次のレベルまで ${lv.need - lv.cur} XP ・ バッジ ${Object.keys(S.badges).length}/${BADGES.length}</div></div>
     </div>
-    <div class="card">
-      <h2>ランダム出題</h2>
+    <div class="card today">
+      <div class="ring">${ringSVG(today, s.goal)}<div class="num"><b>${today}</b><span>/${s.goal}問</span></div></div>
+      <div class="today-r">
+        <div class="kpis">
+          <div class="kpi"><b>🔥${streak()}<small style="font-size:11px">日</small></b><span>連続学習</span></div>
+          <div class="kpi"><b>⭐${masteredCount()}</b><span>マスター</span></div>
+          ${examHtml}
+        </div>
+        ${weekHTML()}
+      </div>
+    </div>
+    <button class="btn primary bigbtn" data-act="smart"><span class="ic">▶</span><span><b>サクッと5問</b><small>苦手・未学習・復習どきの問題からおすすめ</small></span></button>
+    <div class="quick">
+      <button data-act="ox"><span class="ic">⚡</span><b>○×スピード</b><small>10問・1タップで答える</small></button>
+      <button data-act="one"><span class="ic">🎲</span><b>1問だけ</b><small>30秒でできる</small></button>
+      <button data-act="review" ${wr?'':'disabled'}>${wr?`<span class="dot">${wr}</span>`:''}<span class="ic">🔁</span><b>まちがい復習</b><small>${wr?'正解するとリストから消える':'いまは0問'}</small></button>
+      <button data-act="basics"><span class="ic">📖</span><b>仕訳のきほん</b><small>借方・貸方の決め方</small></button>
+    </div>
+    <details class="card">
+      <summary>📚 じっくり出題（範囲・問題数を選ぶ）</summary>
       <p class="label">出題範囲</p>
       <div class="seg">
         ${[['all','すべて'],['shogyo','商業'],['kogyo','工業'],['custom','分野選択']].map(([k,l])=>`<button class="${s.scope===k?'on':''}" data-act="scope" data-v="${k}">${l}</button>`).join('')}
@@ -772,77 +1037,110 @@ function renderHome(){
         ${[[10,'10問'],[20,'20問'],[0,'全問']].map(([k,l])=>`<button class="${s.count===k?'on':''}" data-act="count" data-v="${k}">${l}</button>`).join('')}
       </div>
       <button class="btn primary" data-act="start" ${poolN?'':'disabled'}>スタート（${poolN? (s.count? Math.min(s.count,poolN) : poolN)+'問' : '分野を選んでください'}）</button>
-    </div>
-    <div class="card">
-      <div class="review">
-        <div class="num ${wr?'':'zero'}">${wr}</div>
-        <div><h2 style="margin:0">間違えた問題を復習</h2><p class="sub" style="margin:0">正解すると復習リストから外れます</p></div>
-      </div>
-      <button class="btn warn" style="margin-top:12px" data-act="review" ${wr?'':'disabled'}>復習をはじめる</button>
-    </div>
+    </details>
     <p class="note">学習記録はこの端末のブラウザ内に保存されます</p>`;
+  if(sessionStorage.getItem('openDetails')){ view.querySelector('details').open = true; sessionStorage.removeItem('openDetails'); }
 }
 
-/* ---------- 出題 ---------- */
+/* ---------- 仕訳のきほん ---------- */
+function showBasics(){
+  openModal(`
+    <h2>📖 仕訳のきほん</h2>
+    <p style="margin:0;font-size:14px">仕訳は「<b>何が増えた？減った？</b>」を、左（借方）と右（貸方）に書き分けるだけ。</p>
+    <table class="basics"><tr><th>借方（左）に書く</th><th>貸方（右）に書く</th></tr>
+      <tr><td>資産が<b>増えた</b></td><td>資産が<b>減った</b></td></tr>
+      <tr><td>負債が減った</td><td>負債が<b>増えた</b></td></tr>
+      <tr><td>純資産が減った</td><td>純資産が<b>増えた</b></td></tr>
+      <tr><td>費用が<b>発生</b></td><td>収益が<b>発生</b></td></tr></table>
+    <div class="point"><span>💡 覚え方</span>資産・費用は「左」がふるさと。負債・純資産・収益は「右」がふるさと。ふるさと側に書けば増加、反対側なら減少です。</div>
+    <p class="label" style="margin-top:12px">迷ったときの3ステップ</p>
+    <ol class="help"><li>取引で動いた勘定科目を2つ以上見つける</li><li>それぞれ 資産／負債／純資産／収益／費用 のどれか考える</li><li>増えたか減ったかで、左右を決める</li></ol>
+    <p class="sub" style="margin:10px 0 14px">最後に「借方の合計 ＝ 貸方の合計」になっているか確認しよう。</p>
+    <button class="btn primary" data-act="closeModal">とじる</button>`);
+}
+function openModal(html){ const m = document.getElementById('modal'); m.innerHTML = `<div class="sheet">${html}</div>`; m.classList.add('show'); }
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+
+/* =========================================================
+   仕訳を入力する出題
+   ========================================================= */
 let sess = null;
 function startSession(ids, mode){
   if(!ids.length){ toast('出題できる問題がありません'); return; }
-  sess = {ids, mode, i:0, results:[]};
+  sess = {ids, mode, i:0, results:[], combo:0, xp:0, newBadges:[], lvStart:lvInfo(S.xp).lv};
   go('quiz'); renderQuiz();
 }
-function rowHTML(opts){
-  return `<div class="row"><select class="acc" aria-label="勘定科目"><option value="">勘定科目</option>${
-    opts.map(o=>`<option>${esc(o)}</option>`).join('')}</select>${
+function rowHTML(){
+  return `<div class="row"><button type="button" class="accbtn empty" data-act="pickrow">勘定科目</button>${
     S.set.amount ? '<input class="amt" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="金額" autocomplete="off" aria-label="金額">' : ''
   }<button class="del" data-act="delrow" aria-label="行を削除">×</button></div>`;
 }
 function histText(id){
   const r = S.rec[id];
-  return r ? `この問題：${r.n}回中${r.c}回正解${r.last===false?'（前回×）':''}` : 'この問題：はじめて';
+  return r ? `この問題：${r.n}回中${r.c}回正解${r.last===false?'（前回×）':''}` : '';
 }
+const MODE_LABEL = {smart:'おすすめ', random:'じっくり', review:'復習', cat:'分野別', one:'1問だけ'};
 function renderQuiz(){
   const q = QMAP[sess.ids[sess.i]], cat = CMAP[q.cat];
-  const opts = shuffle([...new Set([...q.d.map(l=>l[0]), ...q.c.map(l=>l[0]), ...q.x])]);
-  sess.opts = opts; sess.done = false;
+  sess.opts = shuffle([...new Set([...q.d.map(l=>l[0]), ...q.c.map(l=>l[0]), ...q.x])]);
+  sess.done = false; sess.hint = false;
   view.innerHTML = `
-    <div class="qtop"><button class="link" data-act="quit">✕ 中断</button><div class="prog">${sess.i+1} / ${sess.ids.length}</div></div>
+    <div class="qtop"><button class="link" data-act="quit">✕ 中断</button>
+      <div class="qtop-r">${sess.combo>=2?`<span class="combo">🔥${sess.combo}連続</span>`:''}<span class="prog">${sess.i+1} / ${sess.ids.length}</span>
+      <button class="iconbtn" data-act="basics" aria-label="仕訳のきほん">？</button></div></div>
     <div class="bar"><span style="width:${sess.i/sess.ids.length*100}%"></span></div>
     <div class="card">
-      <div class="tags"><span class="tag ${cat.grp==='商業'?'g1':'g2'}">${cat.grp}簿記</span><span class="tag">${esc(cat.name)}</span>${sess.mode==='review'?'<span class="tag warn">復習</span>':''}</div>
+      <div class="tags"><span class="tag ${cat.grp==='商業'?'g1':'g2'}">${cat.grp}簿記</span><span class="tag">${esc(cat.name)}</span>${
+        sess.mode==='review'?'<span class="tag warn">復習</span>':''}${S.rec[q.id]?'':'<span class="tag new">NEW</span>'}${starHTML(q.id)}</div>
       <p class="qtext">${esc(q.q)}</p>
-      <p class="hist">${histText(q.id)}</p>
+      ${histText(q.id) ? `<p class="hist">${histText(q.id)}</p>` : ''}
     </div>
     <div class="card" id="ans">
-      <div class="side d"><div class="sh">借方</div><div class="rows" data-side="d">${rowHTML(opts)}${rowHTML(opts)}</div><button class="add" data-act="addrow" data-side="d">＋ 行を追加</button></div>
-      <div class="side c"><div class="sh">貸方</div><div class="rows" data-side="c">${rowHTML(opts)}${rowHTML(opts)}</div><button class="add" data-act="addrow" data-side="c">＋ 行を追加</button></div>
-      <p class="sub" style="margin:4px 0 0;font-size:12px">${S.set.amount?'同じ勘定科目は1行にまとめても、分けて入力してもOK。':'設定で「金額も入力」がオフのため、勘定科目のみ採点します。'}</p>
+      <p class="pal-h">${S.set.amount ? '① 勘定科目をタップ　② 金額を入力' : '勘定科目をタップ（金額の入力はオフ）'}</p>
+      <div class="palette">${sess.opts.map(o => `<button class="pchip" data-act="chip" data-acc="${esc(o)}">${esc(o)}</button>`).join('')}</div>
+      <div class="side d"><div class="sh">借方 <small>（左）</small></div><div class="rows" data-side="d">${rowHTML()}</div><button class="add" data-act="addrow" data-side="d">＋ 借方に行を追加</button></div>
+      <div class="side c"><div class="sh">貸方 <small>（右）</small></div><div class="rows" data-side="c">${rowHTML()}</div><button class="add" data-act="addrow" data-side="c">＋ 貸方に行を追加</button></div>
+      <p class="sub" style="margin:4px 0 0;font-size:12px">入れ直したいときは、欄をタップしてから科目をタップ。</p>
     </div>
+    <div id="hintbox"></div>
     <div id="fb"></div>
     <div class="actions" id="actions">
-      <button class="btn ghost" data-act="giveup">答えを見る</button>
+      <button class="btn ghost" data-act="hint">💡 ヒント</button>
+      <button class="btn ghost" data-act="giveup">答え</button>
       <button class="btn primary" data-act="submit">解答する</button>
     </div>`;
+  setActive(view.querySelector('.rows[data-side="d"] .row'));
+}
+function setActive(row){
+  view.querySelectorAll('#ans .row.active').forEach(r => r.classList.remove('active'));
+  sess.active = row || null;
+  if(row) row.classList.add('active');
+}
+function firstEmpty(side){ return [...view.querySelectorAll(`.rows[data-side="${side}"] .row`)].find(r => !r.dataset.acc); }
+function fillChip(acc){
+  if(sess.done) return;
+  let row = sess.active || firstEmpty('d') || firstEmpty('c');
+  if(!row){ toast('入れたい欄をタップするか、行を追加してください'); return; }
+  row.dataset.acc = acc;
+  const b = row.querySelector('.accbtn'); b.textContent = acc; b.classList.remove('empty');
+  buzz(8);
+  const side = row.parentElement.dataset.side;
+  setActive(firstEmpty(side) || (side==='d' ? firstEmpty('c') : null));
 }
 function collect(side){
   const lines = []; let err = null;
   view.querySelectorAll(`.rows[data-side="${side}"] .row`).forEach(r => {
-    const a = r.querySelector('.acc').value;
+    const a = r.dataset.acc || '';
     const amtEl = r.querySelector('.amt');
     const raw = amtEl ? amtEl.value.replace(/[^0-9]/g,'') : '';
     if(!a && !raw) return;
-    if(!a){ err = '勘定科目が選ばれていない行があります'; return; }
+    if(!a){ err = '勘定科目が入っていない行があります'; return; }
     if(S.set.amount && !raw){ err = '金額が入力されていない行があります'; return; }
     lines.push([a, S.set.amount ? Number(raw) : 0]);
   });
   return {lines, err};
 }
-function sameMap(a, b, useAmt){
-  if(a.size !== b.size) return false;
-  for(const [k,v] of a){ if(!b.has(k)) return false; if(useAmt && b.get(k)!==v) return false; }
-  return true;
-}
 function jtable(d, c, opt = {}){
-  // d, c: [[勘定科目, 金額]]  opt.check: {d:Map, c:Map} 正解との照合用
   const n = Math.max(d.length, c.length, 1);
   const cell = (l, side) => {
     if(!l) return '<td></td>';
@@ -853,6 +1151,25 @@ function jtable(d, c, opt = {}){
   let h = '<table class="jt"><thead><tr><th>借方</th><th>貸方</th></tr></thead><tbody>';
   for(let i=0;i<n;i++) h += `<tr>${cell(d[i],'d')}${cell(c[i],'c')}</tr>`;
   return h + '</tbody></table>';
+}
+function showHint(){
+  if(sess.done || sess.hint) return;
+  const q = QMAP[sess.ids[sess.i]];
+  sess.hint = true;
+  document.getElementById('hintbox').innerHTML = `<div class="card hintcard">
+    <p style="margin:0 0 6px;font-size:14px"><b>💡 ヒント</b>　正解は <b>借方${q.d.length}行・貸方${q.c.length}行</b></p>
+    <p style="margin:0;font-size:14px">${esc(EX[q.id].p)}</p>
+    <p class="sub" style="margin:6px 0 0;font-size:11px">ヒントを見て正解すると +5XP（通常 +10XP）</p></div>`;
+  view.querySelector('[data-act=hint]').disabled = true;
+}
+function explainHTML(q, ok){
+  return `${EX[q.id] ? `<div class="point"><span>💡 ポイント</span>${esc(EX[q.id].p)}</div>` : ''}
+      <details class="think-box"${ok?'':' open'}><summary>🧭 1行ずつの考え方</summary>${thinkHTML(q)}</details>
+      <p class="jlabel" style="margin:12px 0 4px">📝 解説</p>
+      <p class="expl">${q.e}</p>
+      ${EX[q.id] ? `<div class="trap"><span>⚠️ ひっかけ・覚え方</span>${esc(EX[q.id].t)}</div>` : ''}
+      <p class="jlabel" style="margin:12px 0 6px">📺 この単元を動画で復習（ふくしままさゆき）</p>
+      ${ytLinks(q.cat)}`;
 }
 function grade(giveup){
   if(sess.done) return;
@@ -870,26 +1187,32 @@ function grade(giveup){
   sess.done = true;
   record(q.id, ok);
   sess.results.push({id:q.id, ok});
+  sess.combo = ok ? sess.combo + 1 : 0;
+  if(sess.combo > S.best.combo) S.best.combo = sess.combo;
+  if(ok && sess.mode === 'review') S.best.revenge = (S.best.revenge||0) + 1;
+  const xp = ok ? (sess.hint ? 5 : 10) + (sess.combo >= 3 ? 5 : 0) : (giveup ? 1 : 2);
+  sess.xp += xp; addXP(xp);
+  checkBadges();
+  setActive(null);
   document.getElementById('ans').classList.add('locked');
-  view.querySelectorAll('#ans select, #ans input').forEach(el => el.disabled = true);
+  view.querySelectorAll('#ans input, #ans .accbtn').forEach(el => el.disabled = true);
   const last = sess.i === sess.ids.length-1;
   const yours = giveup ? '' : `<p class="jlabel">あなたの解答</p>${jtable(ud, uc, {check:{d:merge(q.d), c:merge(q.c)}, useAmt, noAmt:!useAmt})}`;
+  const verdict = ok ? `<b>○ 正解！</b><span class="xpgain">+${xp} XP</span>${sess.combo>=2?`<span class="combo-msg">🔥 ${sess.combo}連続正解！</span>`:''}`
+                     : `<b>${giveup?'答えはこちら':'× おしい！'}</b><span class="xpgain">+${xp} XP</span>`;
   document.getElementById('fb').innerHTML = `
     <div class="card fb ${ok?'ok':'ng'}" id="fbcard">
-      <p class="verdict">${ok?'○ 正解！':(giveup?'答え':'× 不正解')}</p>
+      <div class="verdict">${verdict}<span style="margin-left:auto">${starHTML(q.id)}</span></div>
       <p class="jlabel">正解の仕訳</p>
       ${jtable(q.d, q.c)}
       ${ok ? '' : yours}
-      ${EX[q.id] ? `<div class="point"><span>💡 ポイント</span>${esc(EX[q.id].p)}</div>` : ''}
-      <details class="think-box"${ok?'':' open'}><summary>🧭 1行ずつの考え方</summary>${thinkHTML(q)}</details>
-      <p class="jlabel" style="margin:12px 0 4px">📝 解説</p>
-      <p class="expl">${q.e}</p>
-      ${EX[q.id] ? `<div class="trap"><span>⚠️ ひっかけ・覚え方</span>${esc(EX[q.id].t)}</div>` : ''}
-      <p class="jlabel" style="margin:12px 0 6px">📺 この単元を動画で復習（ふくしままさゆき）</p>
-      ${ytLinks(q.cat)}
+      ${explainHTML(q, ok)}
     </div>`;
   document.getElementById('actions').innerHTML = `<button class="btn primary" data-act="next">${last?'結果を見る':'次の問題へ →'}</button>`;
-  document.getElementById('fbcard').scrollIntoView({behavior:'smooth', block:'start'});
+  if(ok){ confetti(sess.combo >= 3 ? 60 : 30); buzz(15); }
+  else { document.getElementById('ans').classList.add('shake'); buzz([30, 50, 30]); }
+  setTimeout(() => document.getElementById('fbcard')?.scrollIntoView({behavior:'smooth', block:'start'}), ok ? 250 : 400);
+  flushCelebrate();
 }
 function next(){
   if(sess.i < sess.ids.length-1){ sess.i++; renderQuiz(); window.scrollTo(0,0); }
@@ -900,60 +1223,186 @@ function renderDone(){
   const n = sess.results.length, ok = sess.results.filter(r=>r.ok).length;
   const wrong = sess.results.filter(r=>!r.ok).map(r=>r.id);
   const rate = n ? Math.round(ok/n*100) : 0;
-  const msg = rate===100 ? 'パーフェクト！' : rate>=80 ? 'よくできました！' : rate>=60 ? 'あと少し！' : '復習でしっかり定着させよう';
+  if(n >= 5 && ok === n && !S.best.perfect){ S.best.perfect = true; checkBadges(); }
+  const msg = rate===100 ? 'パーフェクト！' : rate>=80 ? 'よくできました！' : rate>=60 ? 'あと少し！' : 'まちがえた所が伸びしろ！';
+  const lv = lvInfo(S.xp);
   view.innerHTML = `
     <div class="card center">
-      <p class="sub" style="margin:0">${sess.mode==='review'?'復習':'ランダム出題'}の結果</p>
+      <p class="sub" style="margin:0">${MODE_LABEL[sess.mode]||''}の結果</p>
       <div class="big">${ok} / ${n}</div>
       <p style="margin:0;font-weight:700" class="r-${rateClass(rate)}">正答率 ${rate}%　${msg}</p>
+      <div class="gain"><div><b style="color:var(--violet)">+${sess.xp}</b><span>XP</span></div><div><b>Lv.${lv.lv}</b><span>${esc(lv.title)}</span></div><div><b>${S.days[todayKey()]||0}/${S.set.goal}</b><span>今日の問題数</span></div></div>
+      <div class="xpbar" style="margin-top:12px"><span style="width:${lv.cur/lv.need*100}%"></span></div>
+      ${sess.newBadges.length ? `<p style="margin:10px 0 0;font-size:14px">🏅 新しいバッジ：${sess.newBadges.map(id=>{const b=BADGES.find(x=>x.id===id);return b.i+b.n;}).join('、')}</p>` : ''}
     </div>
     <div class="card">
       <ul class="rlist">${sess.results.map(r => { const q=QMAP[r.id]; const t=plain(q.q);
         return `<li><span class="mk ${r.ok?'o':'x'}">${r.ok?'○':'×'}</span><span><span class="tag" style="margin-right:4px">${esc(CMAP[q.cat].name)}</span>${esc(t.length>48?t.slice(0,48)+'…':t)}</span></li>`; }).join('')}</ul>
     </div>
-    ${wrong.length ? `<div class="card"><h2>📺 間違えた単元を動画で復習</h2>${[...new Set(wrong.map(id=>QMAP[id].cat))].map(cid=>`<p class="label" style="margin:8px 0 6px">${esc(CMAP[cid].name)}</p>${ytLinks(cid)}`).join('')}</div>` : ''}
-    ${wrong.length ? `<button class="btn warn" data-act="retry">間違えた${wrong.length}問をもう一度</button>` : ''}
-    <button class="btn primary" data-act="again">続けて出題する</button>
+    ${wrong.length ? `<div class="card"><h2>📺 まちがえた単元を動画で復習</h2>${[...new Set(wrong.map(id=>QMAP[id].cat))].map(cid=>`<p class="label" style="margin:8px 0 6px">${esc(CMAP[cid].name)}</p>${ytLinks(cid)}`).join('')}</div>` : ''}
+    ${wrong.length ? `<button class="btn warn" data-act="retry">まちがえた${wrong.length}問をもう一度</button>` : ''}
+    <button class="btn primary" data-act="again">もう1セット</button>
     <button class="btn ghost" data-act="go" data-v="home">ホームへ戻る</button>`;
   sess.wrong = wrong;
+  if(rate === 100 && n >= 3) confetti(120);
   window.scrollTo(0,0);
+  flushCelebrate();
+}
+
+/* =========================================================
+   ○×スピード（表示された仕訳が正しいか1タップで答える）
+   ========================================================= */
+let oxs = null, oxTimer = null;
+function makeOx(q){
+  if(Math.random() < 0.5) return {id:q.id, d:q.d, c:q.c, truth:true};
+  const nums = [...new Set((q.q.match(/[\d,]+(?=円)/g)||[]).map(s => +s.replace(/,/g,'')).filter(n => n >= 1000))];
+  for(let k = 0; k < 12; k++){
+    let d = q.d.map(l => [...l]), c = q.c.map(l => [...l]);
+    const kind = pick(['swap','acc','acc','amt']);
+    if(kind === 'swap'){ [d, c] = [c, d]; }
+    else if(kind === 'acc'){
+      const used = new Set([...d, ...c].map(l => l[0])), cands = q.x.filter(x => !used.has(x));
+      if(!cands.length) continue;
+      pick([...d, ...c])[0] = pick(cands);
+    } else {
+      if(d.length === 1 && c.length === 1){ const alt = nums.filter(n => n !== d[0][1]); if(!alt.length) continue; d[0][1] = c[0][1] = pick(alt); }
+      else { const l = pick([...d, ...c]), alt = nums.filter(n => n !== l[1]); if(!alt.length) continue; l[1] = pick(alt); }
+    }
+    if(!(sameMap(merge(d), merge(q.d), true) && sameMap(merge(c), merge(q.c), true))) return {id:q.id, d, c, truth:false};
+  }
+  return {id:q.id, d:q.d, c:q.c, truth:true};
+}
+function startOx(){
+  oxs = {cards:smartPick(10).map(id => makeOx(QMAP[id])), i:0, ok:0, combo:0, xp:0, t0:Date.now(), results:[]};
+  sess = {newBadges:[]};
+  go('ox'); renderOx();
+  oxTimer = setInterval(() => { const t = document.getElementById('oxtime'); if(t) t.textContent = ((Date.now()-oxs.t0)/1000).toFixed(1)+'秒'; }, 100);
+}
+function renderOx(){
+  const card = oxs.cards[oxs.i], q = QMAP[card.id], cat = CMAP[q.cat];
+  oxs.answered = false;
+  view.innerHTML = `
+    <div class="qtop"><button class="link" data-act="oxquit">✕ 終了</button>
+      <div class="qtop-r">${oxs.combo>=2?`<span class="combo">🔥${oxs.combo}</span>`:''}<span class="timer" id="oxtime">${((Date.now()-oxs.t0)/1000).toFixed(1)}秒</span><span class="prog">${oxs.i+1} / ${oxs.cards.length}</span></div></div>
+    <div class="bar"><span style="width:${oxs.i/oxs.cards.length*100}%"></span></div>
+    <div class="card" id="oxcard">
+      <div class="tags"><span class="tag ${cat.grp==='商業'?'g1':'g2'}">${cat.grp}簿記</span><span class="tag">${esc(cat.name)}</span></div>
+      <p class="oxq">${esc(q.q)}</p>
+      <p class="oxask">この仕訳は正しい？</p>
+      ${jtable(card.d, card.c)}
+    </div>
+    <div id="oxfb"></div>
+    <div class="oxbtns" id="oxbtns">
+      <button class="oxo" data-act="oxans" data-v="1">○<small>正しい</small></button>
+      <button class="oxx" data-act="oxans" data-v="0">×<small>まちがい</small></button>
+    </div>`;
+}
+function answerOx(choice){
+  if(oxs.answered) return;
+  oxs.answered = true;
+  const card = oxs.cards[oxs.i], q = QMAP[card.id], ok = (choice === card.truth);
+  oxs.results.push({id:card.id, ok});
+  S.ox.n++; if(ok){ S.ox.c++; oxs.ok++; }
+  oxs.combo = ok ? oxs.combo + 1 : 0;
+  if(oxs.combo > S.best.combo) S.best.combo = oxs.combo;
+  const xp = ok ? 3 : 1; oxs.xp += xp;
+  countToday(); addXP(xp); checkBadges();
+  document.getElementById('oxcard').classList.add(ok ? 'flash-ok' : 'flash-ng');
+  const lastCard = oxs.i === oxs.cards.length - 1;
+  if(ok && card.truth){
+    buzz(12); confetti(20);
+    document.getElementById('oxfb').innerHTML = `<div class="verdict center" style="justify-content:center"><b style="color:var(--ok)">○ 正解！</b><span class="xpgain">+${xp} XP</span></div>`;
+    document.getElementById('oxbtns').style.visibility = 'hidden';
+    setTimeout(() => { if(celebQ.length){ flushCelebrate(); showOxNext(lastCard); } else oxNext(); }, 650);
+    return;
+  }
+  if(ok) buzz(12); else { buzz([30,50,30]); document.getElementById('oxcard').classList.add('shake'); }
+  document.getElementById('oxfb').innerHTML = `
+    <div class="card fb ${ok?'ok':'ng'}">
+      <div class="verdict"><b>${ok?'○ 正解！':'× ざんねん'}</b><span class="xpgain">+${xp} XP</span></div>
+      <p style="margin:0 0 4px;font-size:14px">${card.truth ? 'さっきの仕訳は<b>正しい</b>仕訳でした。' : 'さっきの仕訳は<b>まちがい</b>。正しくはこちら：'}</p>
+      ${card.truth ? '' : jtable(q.d, q.c)}
+      <div class="point"><span>💡 ポイント</span>${esc(EX[q.id].p)}</div>
+    </div>`;
+  showOxNext(lastCard);
+  flushCelebrate();
+}
+function showOxNext(lastCard){
+  document.getElementById('oxbtns').outerHTML = `<button class="btn primary" data-act="oxnext">${lastCard?'結果を見る':'次へ →'}</button>`;
+}
+function oxNext(){
+  if(oxs.i < oxs.cards.length - 1){ oxs.i++; renderOx(); window.scrollTo(0,0); }
+  else oxDone();
+}
+function oxDone(){
+  clearInterval(oxTimer);
+  cur = 'done';
+  const n = oxs.cards.length, sec = (Date.now() - oxs.t0)/1000;
+  let best = '';
+  if(oxs.ok === n){
+    if(!S.best.oxTime || sec < S.best.oxTime){ best = '<p style="margin:6px 0 0;font-weight:800;color:var(--gold)">🏁 全問正解の自己ベスト更新！</p>'; S.best.oxTime = sec; }
+    confetti(120);
+  }
+  save();
+  const wrongCats = [...new Set(oxs.results.filter(r=>!r.ok).map(r=>QMAP[r.id].cat))];
+  view.innerHTML = `
+    <div class="card center">
+      <p class="sub" style="margin:0">⚡ ○×スピードの結果</p>
+      <div class="big">${oxs.ok} / ${n}</div>
+      <p style="margin:0;font-weight:700">タイム ${sec.toFixed(1)}秒${S.best.oxTime?`（全問正解ベスト ${S.best.oxTime.toFixed(1)}秒）`:''}</p>
+      ${best}
+      <div class="gain"><div><b style="color:var(--violet)">+${oxs.xp}</b><span>XP</span></div><div><b>${S.days[todayKey()]||0}/${S.set.goal}</b><span>今日の問題数</span></div></div>
+    </div>
+    ${wrongCats.length ? `<div class="card"><h2>📺 まちがえた単元を動画で復習</h2>${wrongCats.map(cid=>`<p class="label" style="margin:8px 0 6px">${esc(CMAP[cid].name)}</p>${ytLinks(cid)}`).join('')}</div>` : ''}
+    <button class="btn primary" data-act="ox">もう1回 ⚡</button>
+    <button class="btn" data-act="smart">仕訳を書く練習（5問）</button>
+    <button class="btn ghost" data-act="go" data-v="home">ホームへ戻る</button>`;
+  window.scrollTo(0,0);
+  flushCelebrate();
 }
 
 /* ---------- 成績 ---------- */
 function catStats(cid){
-  const qs = QS.filter(q=>q.cat===cid); let n=0, c=0, learned=0, wrong=0;
-  qs.forEach(q => { const r=S.rec[q.id]; if(r){ n+=r.n; c+=r.c; learned++; if(r.last===false) wrong++; } });
-  return {total:qs.length, n, c, learned, wrong, rate: n ? Math.round(c/n*100) : null};
+  const qs = QS.filter(q=>q.cat===cid); let n=0, c=0, learned=0, wrong=0, master=0;
+  qs.forEach(q => { const r=S.rec[q.id]; if(r){ n+=r.n; c+=r.c; learned++; if(r.last===false) wrong++; } if(stars(q.id)>=3) master++; });
+  return {total:qs.length, n, c, learned, wrong, master, rate: n ? Math.round(c/n*100) : null};
 }
 function renderStats(){
   let tot=0, ok=0; Object.entries(S.rec).forEach(([id,r]) => { if(QMAP[id]){ tot+=r.n; ok+=r.c; } });
-  const learned = Object.keys(S.rec).filter(id=>QMAP[id]).length;
+  const lv = lvInfo(S.xp);
   const groups = ['商業','工業'].map(g => {
     const rows = CATS.filter(c=>c.grp===g).map(c => {
       const s = catStats(c.id), rc = rateClass(s.rate);
       return `<div class="cat">
         <div class="cat-h"><b>${esc(c.name)}</b><span class="rate r-${rc}">${s.rate===null?'未学習':s.rate+'%'}</span></div>
         <div class="meter"><span class="bg-${rc}" style="width:${s.rate||0}%"></span></div>
-        <div class="cat-f"><span>正解 ${s.c}/${s.n}回・学習 ${s.learned}/${s.total}問${s.wrong?`・<span class="r-bad">要復習 ${s.wrong}</span>`:''}</span>
+        <div class="cat-f"><span>学習 ${s.learned}/${s.total}問・⭐${s.master}${s.wrong?`・<span class="r-bad">要復習 ${s.wrong}</span>`:''}</span>
         <span style="display:flex;gap:6px;flex:0 0 auto"><a class="mini" style="border-color:var(--yt);color:var(--yt)" href="${ytUrl(c.yt[0])}" target="_blank" rel="noopener">動画</a><button class="mini" data-act="catstart" data-id="${c.id}">解く</button></span></div>
       </div>`;
     }).join('');
     let gn=0, gc=0; CATS.filter(c=>c.grp===g).forEach(c=>{ const s=catStats(c.id); gn+=s.n; gc+=s.c; });
     return `<div class="card"><h2>${g}簿記 <span class="sub" style="font-weight:400">${gn?`正答率 ${Math.round(gc/gn*100)}%`:''}</span></h2>${rows}</div>`;
   }).join('');
-  // 苦手分野（回答3回以上で正答率が低い順）
   const weak = CATS.map(c=>({c, s:catStats(c.id)})).filter(o=>o.s.n>=3 && o.s.rate<80).sort((a,b)=>a.s.rate-b.s.rate).slice(0,3);
   view.innerHTML = `
     <h1>成績</h1>
-    <div class="hero" style="margin-top:10px">
-      <div class="stat"><b>${tot}</b><span>総回答数</span></div>
-      <div class="stat"><b>${tot?Math.round(ok/tot*100)+'%':'-'}</b><span>正答率</span></div>
-      <div class="stat"><b>${learned}<small style="font-size:12px">/${QS.length}</small></b><span>学習済み</span></div>
-      <div class="stat"><b class="${wrongIds().length?'r-bad':''}">${wrongIds().length}</b><span>要復習</span></div>
+    <div class="card lvcard" style="margin-top:10px">
+      <div class="lvbadge"><small>Lv.</small><b>${lv.lv}</b></div>
+      <div class="lvbody"><div class="lvtitle">${esc(lv.title)}</div>
+        <div class="xpbar"><span style="width:${lv.cur/lv.need*100}%"></span></div>
+        <div class="sub" style="font-size:11px">累計 ${S.xp} XP ・ 次のレベルまで ${lv.need - lv.cur} XP</div></div>
     </div>
+    <div class="hero">
+      <div class="stat"><b>${tot}</b><span>仕訳の回答</span></div>
+      <div class="stat"><b>${tot?Math.round(ok/tot*100)+'%':'-'}</b><span>正答率</span></div>
+      <div class="stat"><b>⭐${masteredCount()}<small style="font-size:11px">/${QS.length}</small></b><span>マスター</span></div>
+      <div class="stat"><b>${S.ox.n?Math.round(S.ox.c/S.ox.n*100)+'%':'-'}</b><span>○×正答率</span></div>
+    </div>
+    <div class="card"><h2>🏅 バッジ <span class="sub" style="font-weight:400">${Object.keys(S.badges).length}/${BADGES.length}</span></h2>
+      <div class="badges">${BADGES.map(b=>`<div class="badge ${S.badges[b.id]?'on':''}" data-act="badge" data-id="${b.id}"><i>${b.i}</i>${esc(b.n)}</div>`).join('')}</div></div>
     ${weak.length ? `<div class="card"><h2>苦手な分野</h2>${weak.map(o=>`<div class="cat-f" style="padding:4px 0;font-size:14px"><span>${esc(o.c.name)}　<b class="r-${rateClass(o.s.rate)}">${o.s.rate}%</b></span><button class="mini" data-act="catstart" data-id="${o.c.id}">解く</button></div>`).join('')}</div>` : ''}
     ${groups}
-    <p class="note">正答率＝その分野で正解した回数÷回答した回数</p>`;
+    <p class="note">⭐＝3回連続正解でマスター。正答率＝正解した回数÷回答した回数</p>`;
 }
 
 /* ---------- 設定 ---------- */
@@ -964,6 +1413,8 @@ function renderSettings(){
     <div class="card" style="margin-top:10px">
       <div class="set-row"><div><div class="t">金額も入力する</div><div class="d">オフにすると勘定科目だけで採点（スキマ時間向け）</div></div>
         <label class="switch"><input type="checkbox" id="optAmt" ${s.amount?'checked':''}><span></span></label></div>
+      <div class="set-row" style="display:block"><div class="t">1日の目標</div><div class="d" style="margin-bottom:8px">ホームのリングが満タンになる問題数</div>
+        <div class="seg" style="margin:0">${[5,10,20,30].map(g=>`<button class="${s.goal===g?'on':''}" data-act="goal" data-v="${g}">${g}問</button>`).join('')}</div></div>
       <div class="set-row"><div><div class="t">試験日</div><div class="d">ホームにカウントダウンを表示</div></div>
         <input type="date" id="optExam" value="${esc(s.exam)}"></div>
     </div>
@@ -975,12 +1426,13 @@ function renderSettings(){
     <div class="card">
       <h2>使い方</h2>
       <ol class="help">
-        <li>ホームで出題範囲と問題数を選んで「スタート」</li>
-        <li>借方・貸方それぞれ勘定科目を選び、金額を入力して「解答する」</li>
-        <li>わからないときは「答えを見る」（不正解として記録されます）</li>
-        <li>間違えた問題は「間違えた問題を復習」で解き直せます</li>
-        <li>「成績」タブで分野ごとの正答率を確認できます</li>
+        <li><b>サクッと5問</b>：苦手・未学習・復習どきの問題を自動で選びます</li>
+        <li><b>○×スピード</b>：表示された仕訳が正しいか1タップで答えます</li>
+        <li>仕訳は、勘定科目を<b>タップ</b>すると選択中の欄に入ります</li>
+        <li>3回連続で正解すると ⭐マスター。まちがえた問題は「まちがい復習」へ</li>
+        <li>正解でXPがたまってレベルアップ。バッジも集めよう</li>
       </ol>
+      <button class="btn" style="margin-top:12px" data-act="basics">📖 仕訳のきほんを見る</button>
       <p class="sub" style="margin:10px 0 0">スマホのブラウザで「ホーム画面に追加」すると、アプリのように起動できます。</p>
     </div>
     <div class="card">
@@ -1004,25 +1456,51 @@ function renderSettings(){
    ========================================================= */
 const ACT = {
   go: b => go(b.dataset.v),
-  scope: b => { S.set.scope = b.dataset.v; save(); renderHome(); },
-  count: b => { S.set.count = Number(b.dataset.v); save(); renderHome(); },
-  cat: b => { const id=b.dataset.id, a=S.set.cats; S.set.cats = a.includes(id) ? a.filter(x=>x!==id) : [...a, id]; save(); renderHome(); },
+  scope: b => { S.set.scope = b.dataset.v; save(); sessionStorage.setItem('openDetails','1'); renderHome(); },
+  count: b => { S.set.count = Number(b.dataset.v); save(); sessionStorage.setItem('openDetails','1'); renderHome(); },
+  cat: b => { const id=b.dataset.id, a=S.set.cats; S.set.cats = a.includes(id) ? a.filter(x=>x!==id) : [...a, id]; save(); sessionStorage.setItem('openDetails','1'); renderHome(); },
+  goal: b => { S.set.goal = Number(b.dataset.v); save(); renderSettings(); toast(`1日の目標を${S.set.goal}問にしました`); },
+  introOk: () => { S.seenIntro = true; save(); ACT.smart(); },
+  smart: () => { if(!S.seenIntro){ S.seenIntro = true; save(); } startSession(smartPick(5), 'smart'); },
+  one: () => startSession(smartPick(1), 'one'),
+  ox: () => startOx(),
   start: () => { const ids = shuffle(scopePool().map(q=>q.id)); startSession(S.set.count ? ids.slice(0, S.set.count) : ids, 'random'); },
   review: () => startSession(shuffle(wrongIds()), 'review'),
-  catstart: b => { const ids = shuffle(QS.filter(q=>q.cat===b.dataset.id).map(q=>q.id)); startSession(S.set.count ? ids.slice(0, S.set.count) : ids, 'random'); },
-  addrow: b => { if(sess.done) return; b.previousElementSibling.insertAdjacentHTML('beforeend', rowHTML(sess.opts)); },
+  catstart: b => { const pool = QS.filter(q=>q.cat===b.dataset.id); startSession(smartPick(S.set.count || pool.length, pool), 'cat'); sess.catId = b.dataset.id; },
+  basics: () => showBasics(),
+  closeModal: () => closeModal(),
+  closeCeleb: () => { document.getElementById('celebrate').classList.remove('show'); flushCelebrate(); },
+  badge: b => { const x = BADGES.find(y=>y.id===b.dataset.id); toast(`${x.i} ${x.n}：${x.d}${S.badges[x.id]?'（獲得済み）':''}`); },
+  chip: b => fillChip(b.dataset.acc),
+  pickrow: b => { if(!sess.done) setActive(b.closest('.row')); },
+  addrow: b => {
+    if(sess.done) return;
+    const rows = b.previousElementSibling;
+    rows.insertAdjacentHTML('beforeend', rowHTML());
+    setActive(rows.lastElementChild);
+  },
   delrow: b => {
     if(sess.done) return;
     const row = b.closest('.row'), rows = row.parentElement;
-    if(rows.children.length > 1) row.remove();
-    else { row.querySelector('.acc').value=''; const a=row.querySelector('.amt'); if(a) a.value=''; }
+    if(rows.children.length > 1){ const wasActive = row === sess.active; row.remove(); if(wasActive) setActive(firstEmpty('d') || firstEmpty('c')); }
+    else { delete row.dataset.acc; const ab=row.querySelector('.accbtn'); ab.textContent='勘定科目'; ab.classList.add('empty'); const a=row.querySelector('.amt'); if(a) a.value=''; setActive(row); }
   },
+  hint: () => showHint(),
   submit: () => grade(false),
   giveup: () => grade(true),
   next: () => next(),
   quit: () => { if(confirm('中断してホームに戻りますか？\n（ここまでの回答は記録されています）')) go('home'); },
   retry: () => startSession(shuffle(sess.wrong), 'review'),
-  again: () => sess.mode==='review' ? ACT.review() : ACT.start(),
+  again: () => {
+    const m = sess.mode;
+    if(m === 'review') return wrongIds().length ? ACT.review() : ACT.smart();
+    if(m === 'random') return ACT.start();
+    if(m === 'cat') return ACT.catstart({dataset:{id:sess.catId}});
+    ACT.smart();
+  },
+  oxans: b => answerOx(b.dataset.v === '1'),
+  oxnext: () => oxNext(),
+  oxquit: () => { if(confirm('○×スピードを終了しますか？')) go('home'); },
   export: () => {
     document.getElementById('exp').innerHTML = `<textarea readonly id="expText" style="margin-top:10px">${esc(JSON.stringify(S))}</textarea>
       <button class="btn primary" data-act="copy" style="margin-top:6px">コピーする</button>
@@ -1043,15 +1521,16 @@ const ACT = {
       const s = JSON.parse(document.getElementById('impText').value);
       if(!s || typeof s.rec !== 'object') throw 0;
       if(!confirm('現在の記録を上書きして復元します。よろしいですか？')) return;
-      const d = defaults(); S = {...d, ...s, set:{...d.set, ...(s.set||{})}}; save(); toast('復元しました'); go('home');
+      localStorage.setItem(KEY, JSON.stringify(s)); S = load(); save(); toast('復元しました'); go('home');
     }catch(e){ toast('文字列の形式が正しくありません'); }
   },
   reset: () => {
-    if(!confirm('学習記録をすべて消去します。元に戻せません。よろしいですか？')) return;
-    const set = S.set; S = defaults(); S.set = set; save(); toast('記録を消去しました'); go('home');
+    if(!confirm('学習記録（XP・バッジを含む）をすべて消去します。元に戻せません。よろしいですか？')) return;
+    const set = S.set; S = defaults(); S.set = set; S.seenIntro = true; save(); toast('記録を消去しました'); go('home');
   },
 };
 document.addEventListener('click', e => {
+  if(e.target.id === 'modal'){ closeModal(); return; }
   const b = e.target.closest('[data-act]');
   if(!b || b.disabled) return;
   ACT[b.dataset.act]?.(b);
@@ -1062,11 +1541,15 @@ document.addEventListener('input', e => {
   const d = e.target.value.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[^0-9]/g,'').replace(/^0+(?=\d)/,'').slice(0,12);
   e.target.value = d ? Number(d).toLocaleString('ja-JP') : '';
 });
+// 金額欄をタップしたら、その行を選択中にする
+document.addEventListener('focusin', e => { if(e.target.classList?.contains('amt') && sess && !sess.done) setActive(e.target.closest('.row')); });
 // Enterキーで解答
 document.addEventListener('keydown', e => {
   if(e.key==='Enter' && cur==='quiz' && e.target.classList?.contains('amt')){ e.preventDefault(); if(!sess.done) grade(false); }
 });
 
+checkBadges();
+celebQ.length = 0; // 起動時は演出しない
 go('home');
 </script>
 </body>
