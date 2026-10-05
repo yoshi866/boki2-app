@@ -31,6 +31,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
+html{touch-action:manipulation}
 body{
   background:var(--bg); color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",Meiryo,sans-serif;
@@ -116,6 +117,14 @@ details.card[open]>summary{margin-bottom:12px}
 .note{font-size:12px;color:var(--sub);text-align:center;margin:6px 0 0}
 
 /* ---------- quiz ---------- */
+.qhead{position:sticky;top:0;z-index:6;background:var(--bg);margin:-16px -16px 0;padding:calc(8px + env(safe-area-inset-top)) 16px 2px}
+.homebtn{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700;color:var(--text)}
+.actions.sticky,.oxbtns.sticky{position:sticky;bottom:0;z-index:5;margin:0 -16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--bg) 78%,rgba(0,0,0,0))}
+.resume{display:flex;align-items:center;gap:10px;border:2px solid var(--accent)}
+.resume .t{flex:1;min-width:0}
+.resume .t b{display:block}
+.resume .btn{width:auto;padding:10px 16px}
+.amtchip{font-variant-numeric:tabular-nums;color:var(--accent)}
 .qtop{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .qtop-r{display:flex;align-items:center;gap:8px}
 .prog{font-weight:700;font-size:14px;color:var(--sub)}
@@ -162,7 +171,7 @@ details.card[open]>summary{margin-bottom:12px}
 .locked .accbtn,.locked input{opacity:.8}
 .hintcard{background:var(--gold-weak);border-color:transparent}
 .hintcard b{color:var(--gold)}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:60;max-width:90%;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:60;max-width:90%;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
 
 /* ---------- feedback ---------- */
@@ -871,6 +880,8 @@ function checkBadges(){
 
 /* ---------- お祝い演出 ---------- */
 const celebQ = [];
+let celebTimer;
+function closeCeleb(){ clearTimeout(celebTimer); document.getElementById('celebrate').classList.remove('show'); flushCelebrate(); }
 function queueCelebrate(icon, title, sub, big){ celebQ.push({icon, title, sub, big}); }
 function flushCelebrate(){
   const el = document.getElementById('celebrate');
@@ -878,6 +889,7 @@ function flushCelebrate(){
   const c = celebQ.shift();
   el.innerHTML = `<div class="box"><div class="ic">${c.icon}</div><h2>${esc(c.title)}</h2><p class="sub" style="margin:0 0 16px">${esc(c.sub)}</p><button class="btn primary" data-act="closeCeleb">やったね！</button></div>`;
   el.classList.add('show');
+  clearTimeout(celebTimer); celebTimer = setTimeout(closeCeleb, 3500);
   confetti(c.big ? 140 : 70); buzz([20, 40, 20]);
 }
 function confetti(n = 80){
@@ -940,13 +952,17 @@ function smartPick(n, pool = QS){
    画面切り替え
    ========================================================= */
 let cur = 'home';
+const PLAY = ['quiz','done','ox'];
 function go(v){
   cur = v;
   clearInterval(oxTimer);
+  // スマホの「戻る」操作でアプリから抜けないよう、出題中は履歴を1つ積む
+  if(PLAY.includes(v)){ if(location.hash !== '#play') history.pushState(null, '', '#play'); }
+  else if(location.hash === '#play') history.replaceState(null, '', location.pathname + location.search);
   document.body.classList.toggle('quiz', ['quiz','done','ox'].includes(v));
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v===v));
   ({home:renderHome, stats:renderStats, settings:renderSettings})[v]?.();
-  window.scrollTo(0,0);
+  window.scrollTo({top:0, behavior:'instant'});
 }
 
 /* ---------- ホーム ---------- */
@@ -991,6 +1007,12 @@ function renderHome(){
     CATS.filter(c=>c.grp===gr).map(c=>`<button class="chip ${s.cats.includes(c.id)?'on':''}" data-act="cat" data-id="${c.id}">${esc(c.name)}</button>`).join('')}</div>`).join('');
   view.innerHTML = `
     <div class="hello"><div><p class="sub">${g}</p><h1>簿記2級 仕訳トレーニング</h1><p class="sub">${esc(msg)}</p></div></div>
+    ${S.resume && S.resume.i < S.resume.ids.length ? `
+    <div class="card resume">
+      <div class="t"><b>▶ 続きから</b><span class="sub">${MODE_LABEL[S.resume.mode]||''} ・ ${S.resume.i+1}/${S.resume.ids.length}問目から</span></div>
+      <button class="link" data-act="dropResume" aria-label="続きを破棄">✕</button>
+      <button class="btn primary" data-act="resume">再開</button>
+    </div>` : ''}
     ${S.seenIntro ? '' : `
     <div class="card intro">
       <h2>👋 はじめまして！</h2>
@@ -1065,10 +1087,28 @@ function closeModal(){ document.getElementById('modal').classList.remove('show')
    仕訳を入力する出題
    ========================================================= */
 let sess = null;
-function startSession(ids, mode){
+function startSession(ids, mode, extra = {}){
   if(!ids.length){ toast('出題できる問題がありません'); return; }
-  sess = {ids, mode, i:0, results:[], combo:0, xp:0, newBadges:[], lvStart:lvInfo(S.xp).lv};
+  sess = {ids, mode, i:0, results:[], combo:0, xp:0, newBadges:[], ...extra};
+  saveResume(0);
   go('quiz'); renderQuiz();
+}
+// 途中で抜けても「続きから」再開できるように、進み具合を保存
+function saveResume(nextI){
+  if(nextI >= sess.ids.length) delete S.resume;
+  else S.resume = {ids:sess.ids, mode:sess.mode, i:nextI, results:sess.results, combo:sess.combo, xp:sess.xp, catId:sess.catId};
+  save();
+}
+function resumeSession(){
+  const r = S.resume; if(!r) return;
+  const ids = r.ids.filter(id => QMAP[id]);
+  if(r.i >= ids.length){ delete S.resume; save(); renderHome(); return; }
+  sess = {ids, mode:r.mode, i:r.i, results:(r.results||[]).filter(x => QMAP[x.id]), combo:r.combo||0, xp:r.xp||0, catId:r.catId, newBadges:[]};
+  go('quiz'); renderQuiz();
+}
+function leaveToHome(){
+  go('home');
+  if(S.resume) toast('途中の問題は「続きから」で再開できます');
 }
 function rowHTML(){
   return `<div class="row"><button type="button" class="accbtn empty" data-act="pickrow">勘定科目</button>${
@@ -1085,10 +1125,10 @@ function renderQuiz(){
   sess.opts = shuffle([...new Set([...q.d.map(l=>l[0]), ...q.c.map(l=>l[0]), ...q.x])]);
   sess.done = false; sess.hint = false;
   view.innerHTML = `
-    <div class="qtop"><button class="link" data-act="quit">✕ 中断</button>
+    <div class="qhead"><div class="qtop"><button class="homebtn" data-act="home">🏠 ホーム</button>
       <div class="qtop-r">${sess.combo>=2?`<span class="combo">🔥${sess.combo}連続</span>`:''}<span class="prog">${sess.i+1} / ${sess.ids.length}</span>
       <button class="iconbtn" data-act="basics" aria-label="仕訳のきほん">？</button></div></div>
-    <div class="bar"><span style="width:${sess.i/sess.ids.length*100}%"></span></div>
+    <div class="bar"><span style="width:${sess.i/sess.ids.length*100}%"></span></div></div>
     <div class="card">
       <div class="tags"><span class="tag ${cat.grp==='商業'?'g1':'g2'}">${cat.grp}簿記</span><span class="tag">${esc(cat.name)}</span>${
         sess.mode==='review'?'<span class="tag warn">復習</span>':''}${S.rec[q.id]?'':'<span class="tag new">NEW</span>'}${starHTML(q.id)}</div>
@@ -1098,13 +1138,15 @@ function renderQuiz(){
     <div class="card" id="ans">
       <p class="pal-h">${S.set.amount ? '① 勘定科目をタップ　② 金額を入力' : '勘定科目をタップ（金額の入力はオフ）'}</p>
       <div class="palette">${sess.opts.map(o => `<button class="pchip" data-act="chip" data-acc="${esc(o)}">${esc(o)}</button>`).join('')}</div>
+      ${S.set.amount && textNums(q).length ? `<p class="pal-h">問題文の金額（タップで入力）</p>
+      <div class="palette">${textNums(q).map(n => `<button class="pchip amtchip" data-act="amtchip" data-v="${n}">${yen(n)}</button>`).join('')}</div>` : ''}
       <div class="side d"><div class="sh">借方 <small>（左）</small></div><div class="rows" data-side="d">${rowHTML()}</div><button class="add" data-act="addrow" data-side="d">＋ 借方に行を追加</button></div>
       <div class="side c"><div class="sh">貸方 <small>（右）</small></div><div class="rows" data-side="c">${rowHTML()}</div><button class="add" data-act="addrow" data-side="c">＋ 貸方に行を追加</button></div>
       <p class="sub" style="margin:4px 0 0;font-size:12px">入れ直したいときは、欄をタップしてから科目をタップ。</p>
     </div>
     <div id="hintbox"></div>
     <div id="fb"></div>
-    <div class="actions" id="actions">
+    <div class="actions sticky" id="actions">
       <button class="btn ghost" data-act="hint">💡 ヒント</button>
       <button class="btn ghost" data-act="giveup">答え</button>
       <button class="btn primary" data-act="submit">解答する</button>
@@ -1115,6 +1157,14 @@ function setActive(row){
   view.querySelectorAll('#ans .row.active').forEach(r => r.classList.remove('active'));
   sess.active = row || null;
   if(row) row.classList.add('active');
+}
+function textNums(q){ return [...new Set((q.q.match(/[\d,]+(?=円)/g)||[]).map(x => +x.replace(/,/g,'')).filter(n => n >= 1000))]; }
+function fillAmount(n){
+  if(sess.done) return;
+  const rows = [...view.querySelectorAll('.rows[data-side="d"] .row'), ...view.querySelectorAll('.rows[data-side="c"] .row')];
+  const row = rows.find(r => r.dataset.acc && !r.querySelector('.amt').value) || sess.active;
+  if(!row){ toast('先に勘定科目を入れてください'); return; }
+  row.querySelector('.amt').value = yen(n); buzz(8);
 }
 function firstEmpty(side){ return [...view.querySelectorAll(`.rows[data-side="${side}"] .row`)].find(r => !r.dataset.acc); }
 function fillChip(acc){
@@ -1188,6 +1238,7 @@ function grade(giveup){
   record(q.id, ok);
   sess.results.push({id:q.id, ok});
   sess.combo = ok ? sess.combo + 1 : 0;
+  saveResume(sess.i + 1);
   if(sess.combo > S.best.combo) S.best.combo = sess.combo;
   if(ok && sess.mode === 'review') S.best.revenge = (S.best.revenge||0) + 1;
   const xp = ok ? (sess.hint ? 5 : 10) + (sess.combo >= 3 ? 5 : 0) : (giveup ? 1 : 2);
@@ -1220,6 +1271,7 @@ function next(){
 }
 function renderDone(){
   cur = 'done';
+  delete S.resume; save();
   const n = sess.results.length, ok = sess.results.filter(r=>r.ok).length;
   const wrong = sess.results.filter(r=>!r.ok).map(r=>r.id);
   const rate = n ? Math.round(ok/n*100) : 0;
@@ -1282,9 +1334,9 @@ function renderOx(){
   const card = oxs.cards[oxs.i], q = QMAP[card.id], cat = CMAP[q.cat];
   oxs.answered = false;
   view.innerHTML = `
-    <div class="qtop"><button class="link" data-act="oxquit">✕ 終了</button>
+    <div class="qhead"><div class="qtop"><button class="homebtn" data-act="home">🏠 ホーム</button>
       <div class="qtop-r">${oxs.combo>=2?`<span class="combo">🔥${oxs.combo}</span>`:''}<span class="timer" id="oxtime">${((Date.now()-oxs.t0)/1000).toFixed(1)}秒</span><span class="prog">${oxs.i+1} / ${oxs.cards.length}</span></div></div>
-    <div class="bar"><span style="width:${oxs.i/oxs.cards.length*100}%"></span></div>
+    <div class="bar"><span style="width:${oxs.i/oxs.cards.length*100}%"></span></div></div>
     <div class="card" id="oxcard">
       <div class="tags"><span class="tag ${cat.grp==='商業'?'g1':'g2'}">${cat.grp}簿記</span><span class="tag">${esc(cat.name)}</span></div>
       <p class="oxq">${esc(q.q)}</p>
@@ -1292,7 +1344,7 @@ function renderOx(){
       ${jtable(card.d, card.c)}
     </div>
     <div id="oxfb"></div>
-    <div class="oxbtns" id="oxbtns">
+    <div class="oxbtns sticky" id="oxbtns">
       <button class="oxo" data-act="oxans" data-v="1">○<small>正しい</small></button>
       <button class="oxx" data-act="oxans" data-v="0">×<small>まちがい</small></button>
     </div>`;
@@ -1328,7 +1380,7 @@ function answerOx(choice){
   flushCelebrate();
 }
 function showOxNext(lastCard){
-  document.getElementById('oxbtns').outerHTML = `<button class="btn primary" data-act="oxnext">${lastCard?'結果を見る':'次へ →'}</button>`;
+  document.getElementById('oxbtns').outerHTML = `<div class="actions sticky" id="oxbtns"><button class="btn primary" data-act="oxnext">${lastCard?'結果を見る':'次へ →'}</button></div>`;
 }
 function oxNext(){
   if(oxs.i < oxs.cards.length - 1){ oxs.i++; renderOx(); window.scrollTo(0,0); }
@@ -1466,10 +1518,14 @@ const ACT = {
   ox: () => startOx(),
   start: () => { const ids = shuffle(scopePool().map(q=>q.id)); startSession(S.set.count ? ids.slice(0, S.set.count) : ids, 'random'); },
   review: () => startSession(shuffle(wrongIds()), 'review'),
-  catstart: b => { const pool = QS.filter(q=>q.cat===b.dataset.id); startSession(smartPick(S.set.count || pool.length, pool), 'cat'); sess.catId = b.dataset.id; },
+  catstart: b => { const pool = QS.filter(q=>q.cat===b.dataset.id); startSession(smartPick(S.set.count || pool.length, pool), 'cat', {catId:b.dataset.id}); },
   basics: () => showBasics(),
   closeModal: () => closeModal(),
-  closeCeleb: () => { document.getElementById('celebrate').classList.remove('show'); flushCelebrate(); },
+  closeCeleb: () => closeCeleb(),
+  home: () => leaveToHome(),
+  resume: () => resumeSession(),
+  dropResume: () => { if(confirm('途中の問題を破棄しますか？（回答済みの記録は残ります）')){ delete S.resume; save(); renderHome(); } },
+  amtchip: b => fillAmount(Number(b.dataset.v)),
   badge: b => { const x = BADGES.find(y=>y.id===b.dataset.id); toast(`${x.i} ${x.n}：${x.d}${S.badges[x.id]?'（獲得済み）':''}`); },
   chip: b => fillChip(b.dataset.acc),
   pickrow: b => { if(!sess.done) setActive(b.closest('.row')); },
@@ -1489,7 +1545,6 @@ const ACT = {
   submit: () => grade(false),
   giveup: () => grade(true),
   next: () => next(),
-  quit: () => { if(confirm('中断してホームに戻りますか？\n（ここまでの回答は記録されています）')) go('home'); },
   retry: () => startSession(shuffle(sess.wrong), 'review'),
   again: () => {
     const m = sess.mode;
@@ -1500,7 +1555,6 @@ const ACT = {
   },
   oxans: b => answerOx(b.dataset.v === '1'),
   oxnext: () => oxNext(),
-  oxquit: () => { if(confirm('○×スピードを終了しますか？')) go('home'); },
   export: () => {
     document.getElementById('exp').innerHTML = `<textarea readonly id="expText" style="margin-top:10px">${esc(JSON.stringify(S))}</textarea>
       <button class="btn primary" data-act="copy" style="margin-top:6px">コピーする</button>
@@ -1531,6 +1585,7 @@ const ACT = {
 };
 document.addEventListener('click', e => {
   if(e.target.id === 'modal'){ closeModal(); return; }
+  if(e.target.id === 'celebrate'){ closeCeleb(); return; }
   const b = e.target.closest('[data-act]');
   if(!b || b.disabled) return;
   ACT[b.dataset.act]?.(b);
@@ -1547,6 +1602,13 @@ document.addEventListener('focusin', e => { if(e.target.classList?.contains('amt
 document.addEventListener('keydown', e => {
   if(e.key==='Enter' && cur==='quiz' && e.target.classList?.contains('amt')){ e.preventDefault(); if(!sess.done) grade(false); }
 });
+
+// スマホの「戻る」操作：出題中ならホームへ戻る（アプリからは抜けない）
+window.addEventListener('popstate', () => {
+  closeModal();
+  if(PLAY.includes(cur)) leaveToHome();
+});
+if(location.hash === '#play') history.replaceState(null, '', location.pathname + location.search);
 
 checkBadges();
 celebQ.length = 0; // 起動時は演出しない
