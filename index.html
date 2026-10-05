@@ -15,7 +15,7 @@
   --bg:#f3f5f7; --card:#ffffff; --text:#1f2933; --sub:#5f6b7a; --line:#e2e6ea;
   --accent:#0f766e; --accent-weak:#e0f2f1; --accent-text:#ffffff;
   --debit:#1d4ed8; --debit-weak:#eff4ff; --credit:#c2410c; --credit-weak:#fff4ed;
-  --ok:#15803d; --ok-weak:#e8f7ee; --ng:#dc2626; --ng-weak:#fdecec; --warn:#b45309; --warn-weak:#fff7e0;
+  --ok:#15803d; --ok-weak:#e8f7ee; --yt:#c4302b; --yt-weak:#fdeceb; --ng:#dc2626; --ng-weak:#fdecec; --warn:#b45309; --warn-weak:#fff7e0;
   --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
 }
 @media (prefers-color-scheme: dark){
@@ -23,7 +23,7 @@
     --bg:#111518; --card:#1b2126; --text:#e6e9ec; --sub:#9aa5b1; --line:#2d353c;
     --accent:#2dd4bf; --accent-weak:#123a37; --accent-text:#06201d;
     --debit:#7aa2ff; --debit-weak:#18223a; --credit:#ff9a62; --credit-weak:#3a2216;
-    --ok:#4ade80; --ok-weak:#123222; --ng:#f87171; --ng-weak:#3a1717; --warn:#fbbf24; --warn-weak:#3a2e10;
+    --ok:#4ade80; --ok-weak:#123222; --yt:#ff7b72; --yt-weak:#3a1a19; --ng:#f87171; --ng-weak:#3a1717; --warn:#fbbf24; --warn-weak:#3a2e10;
     --shadow:none;
   }
 }
@@ -148,6 +148,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .meter{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:6px 0 4px}
 .meter span{display:block;height:100%;border-radius:4px}
 .cat-f{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--sub)}
+.yts{display:flex;flex-wrap:wrap;gap:6px}
+.yt{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:13px;font-weight:700;color:var(--yt);background:var(--yt-weak);border-radius:8px;padding:7px 12px}
+.yt svg{width:18px;height:18px;flex:0 0 18px}
+a.mini{text-decoration:none;display:inline-block}
 .mini{border:1.5px solid var(--accent);color:var(--accent);background:transparent;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700}
 .r-good{color:var(--ok)} .r-mid{color:var(--warn)} .r-bad{color:var(--ng)} .r-none{color:var(--sub)}
 .bg-good{background:var(--ok)} .bg-mid{background:var(--warn)} .bg-bad{background:var(--ng)}
@@ -189,22 +193,38 @@ body.quiz #nav{display:none}
    分野（カテゴリ）
    ========================================================= */
 const CATS = [
-  {id:'shohin',  grp:'商業', name:'商品売買・収益'},
-  {id:'tegata',  grp:'商業', name:'手形・電子記録債権'},
-  {id:'yuka',    grp:'商業', name:'有価証券'},
-  {id:'kotei',   grp:'商業', name:'固定資産・リース'},
-  {id:'hikiate', grp:'商業', name:'引当金'},
-  {id:'gaika',   grp:'商業', name:'外貨建取引'},
-  {id:'zei',     grp:'商業', name:'税金・税効果'},
-  {id:'junshi',  grp:'商業', name:'純資産・合併'},
-  {id:'honshi',  grp:'商業', name:'本支店・その他'},
-  {id:'renketsu',grp:'商業', name:'連結会計'},
-  {id:'zairyo',  grp:'工業', name:'材料費'},
-  {id:'romu',    grp:'工業', name:'労務費'},
-  {id:'keihi',   grp:'工業', name:'経費・製造間接費'},
-  {id:'seihin',  grp:'工業', name:'製品・標準原価・差異'},
-  {id:'kojo',    grp:'工業', name:'本社工場会計'},
+  {id:'shohin',  grp:'商業', name:'商品売買・収益', yt:['商品売買 売上原価対立法']},
+  {id:'tegata',  grp:'商業', name:'手形・電子記録債権', yt:['手形 電子記録債権']},
+  {id:'yuka',    grp:'商業', name:'有価証券', yt:['有価証券']},
+  {id:'kotei',   grp:'商業', name:'固定資産・リース', yt:['固定資産','リース取引']},
+  {id:'hikiate', grp:'商業', name:'引当金', yt:['引当金']},
+  {id:'gaika',   grp:'商業', name:'外貨建取引', yt:['外貨換算 外貨建取引']},
+  {id:'zei',     grp:'商業', name:'税金・税効果', yt:['法人税 消費税','税効果会計']},
+  {id:'junshi',  grp:'商業', name:'純資産・合併', yt:['株式の発行 剰余金の配当','合併']},
+  {id:'honshi',  grp:'商業', name:'本支店・その他', yt:['本支店会計']},
+  {id:'renketsu',grp:'商業', name:'連結会計', yt:['連結会計']},
+  {id:'zairyo',  grp:'工業', name:'材料費', yt:['工業簿記 材料費']},
+  {id:'romu',    grp:'工業', name:'労務費', yt:['工業簿記 労務費']},
+  {id:'keihi',   grp:'工業', name:'経費・製造間接費', yt:['工業簿記 経費 製造間接費']},
+  {id:'seihin',  grp:'工業', name:'製品・標準原価・差異', yt:['標準原価計算','原価差異']},
+  {id:'kojo',    grp:'工業', name:'本社工場会計', yt:['本社工場会計']},
 ];
+
+/* =========================================================
+   ふくしままさゆきさんのYouTube講義へのリンク
+   yt のキーワードで「ふくしままさゆき 簿記2級 ＋ キーワード」を検索します
+   ========================================================= */
+const YT_PLAYLISTS = [
+  {name:'簿記2級 商業簿記（連結会計以外）', url:'https://www.youtube.com/playlist?list=PLJr7GuMySVGKZQqoE3cUiPnTZ5IAxXGjP'},
+  {name:'簿記2級 工業簿記（全35回）',       url:'https://www.youtube.com/playlist?list=PLJr7GuMySVGIIt7yWt2GNWqw0dBHOWim5'},
+];
+const ytUrl = kw => 'https://www.youtube.com/results?search_query=' + encodeURIComponent('ふくしままさゆき 簿記2級 ' + kw);
+function ytLinks(cid){
+  const c = CATS.find(x => x.id === cid);
+  return `<div class="yts">${c.yt.map(k => `<a class="yt" href="${ytUrl(k)}" target="_blank" rel="noopener">${YT_ICON}${esc(k.replace('工業簿記 ',''))}</a>`).join('')}</div>`
+    + (cid === 'renketsu' ? '<p class="sub" style="margin:4px 0 0;font-size:11px">※連結会計の講義はメンバーシップ限定の回があります</p>' : '');
+}
+const YT_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.7 15.1V8.9L15.5 12z"/></svg>';
 
 /* =========================================================
    問題データ
@@ -718,6 +738,8 @@ function grade(giveup){
       ${ok ? '' : yours}
       <p class="jlabel" style="margin-bottom:4px">解説</p>
       <p class="expl">${q.e}</p>
+      <p class="jlabel" style="margin:12px 0 6px">📺 この単元を動画で復習（ふくしままさゆき）</p>
+      ${ytLinks(q.cat)}
     </div>`;
   document.getElementById('actions').innerHTML = `<button class="btn primary" data-act="next">${last?'結果を見る':'次の問題へ →'}</button>`;
   document.getElementById('fbcard').scrollIntoView({behavior:'smooth', block:'start'});
@@ -742,6 +764,7 @@ function renderDone(){
       <ul class="rlist">${sess.results.map(r => { const q=QMAP[r.id]; const t=plain(q.q);
         return `<li><span class="mk ${r.ok?'o':'x'}">${r.ok?'○':'×'}</span><span><span class="tag" style="margin-right:4px">${esc(CMAP[q.cat].name)}</span>${esc(t.length>48?t.slice(0,48)+'…':t)}</span></li>`; }).join('')}</ul>
     </div>
+    ${wrong.length ? `<div class="card"><h2>📺 間違えた単元を動画で復習</h2>${[...new Set(wrong.map(id=>QMAP[id].cat))].map(cid=>`<p class="label" style="margin:8px 0 6px">${esc(CMAP[cid].name)}</p>${ytLinks(cid)}`).join('')}</div>` : ''}
     ${wrong.length ? `<button class="btn warn" data-act="retry">間違えた${wrong.length}問をもう一度</button>` : ''}
     <button class="btn primary" data-act="again">続けて出題する</button>
     <button class="btn ghost" data-act="go" data-v="home">ホームへ戻る</button>`;
@@ -765,7 +788,7 @@ function renderStats(){
         <div class="cat-h"><b>${esc(c.name)}</b><span class="rate r-${rc}">${s.rate===null?'未学習':s.rate+'%'}</span></div>
         <div class="meter"><span class="bg-${rc}" style="width:${s.rate||0}%"></span></div>
         <div class="cat-f"><span>正解 ${s.c}/${s.n}回・学習 ${s.learned}/${s.total}問${s.wrong?`・<span class="r-bad">要復習 ${s.wrong}</span>`:''}</span>
-        <button class="mini" data-act="catstart" data-id="${c.id}">解く</button></div>
+        <span style="display:flex;gap:6px;flex:0 0 auto"><a class="mini" style="border-color:var(--yt);color:var(--yt)" href="${ytUrl(c.yt[0])}" target="_blank" rel="noopener">動画</a><button class="mini" data-act="catstart" data-id="${c.id}">解く</button></span></div>
       </div>`;
     }).join('');
     let gn=0, gc=0; CATS.filter(c=>c.grp===g).forEach(c=>{ const s=catStats(c.id); gn+=s.n; gc+=s.c; });
@@ -796,6 +819,11 @@ function renderSettings(){
         <label class="switch"><input type="checkbox" id="optAmt" ${s.amount?'checked':''}><span></span></label></div>
       <div class="set-row"><div><div class="t">試験日</div><div class="d">ホームにカウントダウンを表示</div></div>
         <input type="date" id="optExam" value="${esc(s.exam)}"></div>
+    </div>
+    <div class="card">
+      <h2>📺 ふくしままさゆき 講義動画</h2>
+      <p class="sub" style="margin:0 0 10px">YouTubeの再生リストを開きます。単元ごとの動画は、解答後の画面や「成績」タブの「動画」ボタンから開けます。</p>
+      <div class="yts">${YT_PLAYLISTS.map(p=>`<a class="yt" href="${p.url}" target="_blank" rel="noopener">${YT_ICON}${esc(p.name)}</a>`).join('')}</div>
     </div>
     <div class="card">
       <h2>使い方</h2>
