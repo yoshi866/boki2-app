@@ -319,6 +319,8 @@ body.padable.pad-on #pad{display:flex}
 .padhead{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line)}
 .padhead b{font-size:14px;white-space:nowrap}
 .padhead .inkbar{flex:1;flex-wrap:nowrap}
+.sidebtn{display:none}
+@media (min-width:900px){ .sidebtn{display:inline-flex} }
 @media (max-width:520px){
   .padhead b{display:none}
   .padhead{gap:5px;padding:8px}
@@ -332,6 +334,9 @@ body.padable.pad-on #pad{display:flex}
   :root{--padw:min(46vw,640px)}
   #pad{top:0;right:0;bottom:0;width:var(--padw);border-left:1px solid var(--line);padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
   body.padable.pad-on{padding-right:var(--padw)}
+  /* 左利き用：メモを左側に */
+  body.pad-left #pad{right:auto;left:0;border-left:none;border-right:1px solid var(--line)}
+  body.padable.pad-on.pad-left{padding-right:0;padding-left:var(--padw)}
 }
 @media (max-width:899.98px){
   #pad{left:0;right:0;bottom:0;height:50vh;border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.14);padding-bottom:env(safe-area-inset-bottom)}
@@ -1592,6 +1597,7 @@ function defaults(){
   return {v:2, rec:{}, days:{}, xp:0, badges:{}, ox:{n:0, c:0}, best:{combo:0, perfect:false, oxTime:0}, seenIntro:false, exr:{},
           set:{amount:true, scope:'all', cats:[], count:10, exam:'', goal:10,
                pad: IS_WIDE, padEx: false,        // 計算メモを開いておく（仕訳／本試験形式）
+               padLeft: false,                    // 計算メモを左側に出す（左利き用）
                exInput: 'hand',                   // 本試験形式の解答欄：手書き or キーボード
                finger:false, penSeen:false}};     // 指でも書く／Apple Pencilを使ったことがある
 }
@@ -2555,6 +2561,8 @@ function renderSettings(){
   view.innerHTML = `
     <h1>設定</h1>
     <div class="card" style="margin-top:10px">
+      <div class="set-row"><div><div class="t">計算メモの位置</div><div class="d">iPad を横向きにしたとき、メモを出す側。左利きなら「左」がおすすめ（メモの「⇆」でも切り替えられます）</div></div>
+        <div class="seg" style="margin:0;flex:0 0 auto">${[['left','左'],['right','右']].map(([k,l])=>`<button class="${(k==='left')===!!s.padLeft?'on':''}" data-act="padsideSet" data-v="${k}" style="padding:7px 14px">${l}</button>`).join('')}</div></div>
       <div class="set-row"><div><div class="t">指でも書く</div><div class="d">Apple Pencil を使うと、手のひらの誤タッチを防ぐため指では書けなくなります。指でも書きたいときはオン${s.penSeen?'':'（Apple Pencil を使うまでは指で書けます）'}</div></div>
         <label class="switch"><input type="checkbox" id="optFinger" ${s.finger?'checked':''}><span></span></label></div>
       <div class="set-row"><div><div class="t">金額も入力する</div><div class="d">オフにすると勘定科目だけで採点（スキマ時間向け）</div></div>
@@ -2577,7 +2585,7 @@ function renderSettings(){
         <li>仕訳は、勘定科目を<b>タップ</b>すると選択中の欄に入ります</li>
         <li><b>📝 本試験形式</b>：第2〜5問と同じ形式の問題。Apple Pencil で問題用紙に計算を書き込み、解答欄に直接答えを書いて採点します</li>
         <li><b>📷 自分の過去問</b>：手持ちの過去問題集・模試のPDFや写真を取り込んで、その上に書き込んで解けます</li>
-        <li><b>✏️ メモ</b>：出題中の右上ボタンで計算用紙を開閉。iPadを横向きにすると問題の右側に並びます（問題が変わると新しいページに。↶で戻せます）</li>
+        <li><b>✏️ メモ</b>：出題中の右上ボタンで計算用紙を開閉。iPadを横向きにすると問題の横に並びます（左利きなら「⇆」か設定で左側に）（問題が変わると新しいページに。↶で戻せます）</li>
         <li>3回連続で正解すると ⭐マスター。まちがえた問題は「まちがい復習」へ</li>
         <li>正解でXPがたまってレベルアップ。バッジも集めよう</li>
       </ol>
@@ -2795,11 +2803,17 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => Ob
 /* ---------- 計算メモ（画面の右側／下側に出る手書き用紙） ---------- */
 function setupPad(){
   document.body.insertAdjacentHTML('beforeend', `<aside id="pad" aria-label="計算メモ">
-    <div class="padhead"><b>✏️ 計算メモ</b>${inkBarHTML('pad')}<button class="tool" data-act="pad" aria-label="計算メモを閉じる">✕</button></div>
+    <div class="padhead"><b>✏️ 計算メモ</b>${inkBarHTML('pad')}<button class="tool sidebtn" data-act="padside" aria-label="メモを左右に移動">⇆</button><button class="tool" data-act="pad" aria-label="計算メモを閉じる">✕</button></div>
     <div class="inkwrap padpaper" id="padInk"></div></aside>`);
   INKS.pad = new Ink(document.getElementById('padInk'), {name:'pad', width:2, noScroll:true});
   syncBar('pad');
   document.body.classList.toggle('pad-on', !!S.set.pad);
+  document.body.classList.toggle('pad-left', !!S.set.padLeft);
+}
+function setPadSide(left){
+  S.set.padLeft = left; save();
+  document.body.classList.toggle('pad-left', left);
+  toast(left ? '計算メモを左側に表示します（左利き用）' : '計算メモを右側に表示します');
 }
 function setPadable(on){ document.body.classList.toggle('padable', on); }
 function padBtnHTML(){ return `<button class="homebtn padbtn ${S.set[padKey()]?'on':''}" data-act="pad" aria-label="計算メモ">✏️ メモ</button>`; }
@@ -2854,6 +2868,8 @@ const ACT = {
     document.body.classList.toggle('pad-on', S.set[k]);
     document.querySelectorAll('.padbtn').forEach(x => x.classList.toggle('on', S.set[k]));
   },
+  padside: () => setPadSide(!S.set.padLeft),
+  padsideSet: b => { setPadSide(b.dataset.v === 'left'); renderSettings(); },
   exopen: b => startExam(b.dataset.id),
   exinput: b => setExInput(b.dataset.v),
   chs: b => chooseEx(b),
