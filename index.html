@@ -420,8 +420,31 @@ body.padable.pad-on #pad{display:flex}
 
 .padtabs{display:none;margin:0;flex:0 0 auto}
 .padtabs button{padding:6px 10px;font-size:13px}
-body.has-ans .padtabs{display:flex}
-body.has-ans .padhead>b{display:none}
+.padtabs{display:flex}
+.padtabs .tab-ans{display:none}
+body.has-ans .padtabs .tab-ans{display:block}
+.padhead>b{display:none}
+@media (max-width:520px){ .padtabs span{display:none} }
+@media (max-width:440px){ #pad .inkbar [data-op=redo], #pad .inkbar [data-op=blue], #pad .inkbar .sp{display:none} .padtabs button{padding:6px 7px} }
+body.pad-calc #padInk{display:none}
+body.pad-calc #pad .inkbar{display:none}
+body.pad-calc #pad .padhead{justify-content:space-between}
+.calcui{display:none;flex:1;flex-direction:column;gap:8px;padding:10px;max-width:460px;width:100%;margin:0 auto;min-height:0}
+body.pad-calc .calcui{display:flex}
+.cdisp{background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:6px 12px;text-align:right}
+.cdisp .cl{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:22px;font-size:12px;color:var(--sub)}
+.cdisp .cm{font-weight:800;color:var(--violet)}
+.cdisp b{display:block;font-size:34px;font-variant-numeric:tabular-nums;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctape{flex:0 1 auto;max-height:84px;overflow:auto;font-size:12px;color:var(--sub);text-align:right;font-variant-numeric:tabular-nums;line-height:1.5}
+.ctape:empty{display:none}
+.ckeys{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(44px,1fr);gap:6px;min-height:0}
+.ck{border:1.5px solid var(--line);background:var(--card);border-radius:12px;font-size:22px;font-weight:700;color:var(--text);padding:0;font-variant-numeric:tabular-nums;transition:transform .06s}
+.ck:active{transform:scale(.94);background:var(--accent-weak)}
+.ck.op{background:var(--accent-weak);color:var(--accent);font-size:24px}
+.ck.eq{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.ck.fn{font-size:15px;color:var(--sub)}
+.ck.cl{color:var(--ng)}
+.cins{padding:3px 8px;font-size:12px}
 .padans{display:none;flex:1;overflow:auto;padding:10px;background:var(--bg);-webkit-overflow-scrolling:touch}
 .padans img{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:4px}
 body.pad-ans #padInk{display:none}
@@ -444,6 +467,40 @@ body.pad-ans #pad .padhead{justify-content:space-between}
 .filtbtn.on{border-color:var(--warn);background:var(--warn-weak);color:var(--warn)}
 .docadd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .docadd .btn{margin:0;text-align:center;font-size:14px;cursor:pointer}
+
+/* ---------- 模擬試験 ---------- */
+.msec{display:none}
+.msec.on{display:block}
+.mtabs{margin:8px 0 0}
+.mtabs button{padding:7px 2px;font-size:13px}
+.mockcard{border:2px solid var(--violet)}
+.mockcard h2{color:var(--violet)}
+.mq{border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 14px}
+.mq.ok{border-color:var(--ok)} .mq.ng{border-color:var(--ng)}
+.mqq{margin:0 0 6px!important;font-size:14px}
+.jf{table-layout:fixed}
+.jf th.dh{background:var(--debit-weak);color:var(--debit)} .jf th.ch{background:var(--credit-weak);color:var(--credit)}
+.jf td{padding:3px}
+.jsel,.jamt{position:relative;z-index:3;width:100%;height:40px;font:inherit;font-size:14px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);padding:0 6px}
+.jamt{text-align:right;font-variant-numeric:tabular-nums}
+.jsel:focus,.jamt:focus{outline:none;border-color:var(--accent)}
+.jres:empty{display:none}
+.jres{margin-top:8px}
+.mres{margin:8px 0}
+.mres td{border:none;border-bottom:1px solid var(--line);padding:6px 4px}
+.mres td:last-child{width:45%}
+.mres .meter{display:block;margin:0}
+.mres .link{padding:0;font-weight:700;color:var(--text);text-decoration:underline}
+
+.pred h2{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.big2{font-size:30px;line-height:1}
+.prow{display:flex;align-items:center;gap:10px;margin-top:8px}
+.prow .pn{flex:0 0 118px;display:flex;flex-direction:column;line-height:1.25}
+.prow .pn small{font-size:11px;color:var(--sub)}
+.prow .meter{flex:1;margin:0;position:relative;overflow:visible}
+.prow .meter i{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--sub);opacity:.5}
+.prow .pp{flex:0 0 54px;text-align:right;font-size:13px}
+.pnote{margin:0 0 0 128px;font-size:11px;color:var(--sub)}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -1578,7 +1635,7 @@ const EXAMS = [
 <p><b>C社株式</b>　評価差額 560,000−500,000＝60,000<br>繰延税金負債 60,000×30%＝<b>18,000</b>　評価差額金 60,000−18,000＝<b>42,000</b></p>
 <p class="tip">💡 売買目的は損益（P/L）、その他有価証券は純資産（B/S）。税効果はその他有価証券の評価差額にだけかかる。</p>`},
 
-{id:'s05', grp:'商業', part:'第3問', min:8, title:'本支店会計（未達取引）',
+{id:'s05', grp:'商業', part:'第3問', noMock:true, min:8, title:'本支店会計（未達取引）',
  body:`<p>決算にあたり、本店の支店勘定と支店の本店勘定の残高が一致しなかった。調べたところ次の未達事項が判明した。各問に答えなさい。</p>
 <p>本店の支店勘定：740,000円（借方残高）　支店の本店勘定：700,000円（貸方残高）</p>
 <ol class="ol2"><li>本店から支店に発送した商品 80,000円（原価）が、支店に未着である。</li>
@@ -1609,6 +1666,131 @@ const EXAMS = [
  ex:`<p><b>利子抜き法</b>　リース資産は見積現金購入価額 <b>1,050,000</b><br>利息総額 240,000×5−1,050,000＝150,000 → 定額法で年 <b>30,000</b><br>3/31 支払：（借）リース債務 210,000／支払利息 30,000（貸）現金 240,000<br>減価償却 1,050,000÷5年＝<b>210,000</b>　リース債務残高 1,050,000−210,000＝<b>840,000</b></p>
 <p><b>利子込み法</b>　リース料総額 240,000×5＝<b>1,200,000</b>で計上、減価償却 1,200,000÷5＝<b>240,000</b>（支払利息は出てこない）</p>
 <p class="tip">💡 利子抜き法では、毎年の支払額から利息を引いた分だけリース債務が減る。</p>`},
+{id:'s07', grp:'商業', part:'第3問', min:20, title:'貸借対照表の作成',
+ body:`<p>次の決算整理前残高試算表（一部）と決算整理事項にもとづいて、貸借対照表（一部）を完成させなさい。会計期間は X1年4月1日〜X2年3月31日。</p>
+<p class="sh2">［資料1］決算整理前残高試算表（一部・単位：円）</p>
+<div class="two"><table class="tb"><tr><th colspan="2">借方</th></tr>
+<tr><td>現金預金</td><td class="n">820,000</td></tr><tr><td>受取手形</td><td class="n">400,000</td></tr><tr><td>売掛金</td><td class="n">600,000</td></tr><tr><td>繰越商品</td><td class="n">250,000</td></tr><tr><td>仮払法人税等</td><td class="n">80,000</td></tr><tr><td>建物</td><td class="n">2,400,000</td></tr><tr><td>備品</td><td class="n">600,000</td></tr><tr><td>土地</td><td class="n">1,500,000</td></tr></table>
+<table class="tb"><tr><th colspan="2">貸方</th></tr>
+<tr><td>支払手形</td><td class="n">300,000</td></tr><tr><td>買掛金</td><td class="n">450,000</td></tr><tr><td>長期借入金</td><td class="n">1,000,000</td></tr><tr><td>貸倒引当金</td><td class="n">8,000</td></tr><tr><td>建物減価償却累計額</td><td class="n">720,000</td></tr><tr><td>備品減価償却累計額</td><td class="n">216,000</td></tr></table></div>
+<p class="sh2">［資料2］決算整理事項</p>
+<ol class="ol2"><li>売掛金のうち 50,000円 は、前期に発生したもので、得意先の倒産により回収不能となった。貸倒引当金を充当し、不足額は貸倒損失とする。</li>
+<li>受取手形と売掛金の期末残高に対して2%の貸倒引当金を差額補充法により設定する。</li>
+<li>期末商品帳簿棚卸高は 280,000円、実地棚卸高は 270,000円である。</li>
+<li>建物：定額法（耐用年数30年、残存価額ゼロ）。備品：200%定率法（耐用年数5年、償却率0.4）。</li>
+<li>長期借入金のうち 200,000円 は X3年3月31日に返済期日をむかえる。</li>
+<li>支払利息の未払分が 15,000円、保険料の前払分が 24,000円 ある。</li>
+<li>法人税、住民税及び事業税の確定額は 180,000円 である。</li></ol>`,
+ sheet:`<p class="sh2">貸借対照表（一部・単位：円）</p>
+<div class="two"><table class="tb pl"><tr><th colspan="2">資産の部</th></tr>
+<tr><td>現金預金</td><td class="n">820,000</td></tr>
+<tr><td>受取手形</td><td class="n">400,000</td></tr>
+<tr><td>売掛金</td><td>[[a]]</td></tr>
+<tr><td class="in">貸倒引当金</td><td>△[[b]]</td></tr>
+<tr><td>商品</td><td>[[c]]</td></tr>
+<tr><td>前払費用</td><td>[[d]]</td></tr>
+<tr><th>流動資産合計</th><td>[[e]]</td></tr>
+<tr><td>建物減価償却累計額</td><td>△[[f]]</td></tr>
+<tr><td>備品減価償却累計額</td><td>△[[g]]</td></tr></table>
+<table class="tb pl"><tr><th colspan="2">負債の部</th></tr>
+<tr><td>支払手形</td><td class="n">300,000</td></tr>
+<tr><td>買掛金</td><td class="n">450,000</td></tr>
+<tr><td>1年以内返済の長期借入金</td><td>[[h]]</td></tr>
+<tr><td>未払費用</td><td>[[i]]</td></tr>
+<tr><td>未払法人税等</td><td>[[j]]</td></tr>
+<tr><td>長期借入金（固定負債）</td><td>[[k]]</td></tr></table></div>`,
+ ans:{a:550000, b:19000, c:270000, d:24000, e:2045000, f:800000, g:369600, h:200000, i:15000, j:100000, k:800000},
+ pts:{a:2, b:2, c:2, d:2, e:2, f:2, g:2, h:1, i:2, j:2, k:1},
+ ex:`<p><b>① 貸倒れ</b>　売掛金 600,000−50,000＝<b>550,000</b>。貸倒引当金 8,000 を全部使い、残り42,000 は貸倒損失 → 引当金の残高は0</p>
+<p><b>② 貸倒引当金</b>　(受取手形400,000＋売掛金550,000)×2%＝<b>19,000</b>（残高0なので繰入額も19,000）</p>
+<p><b>③ 商品</b>　B/Sには<b>実地棚卸高</b> <b>270,000</b>（減耗10,000は費用）</p>
+<p><b>④ 減価償却</b>　建物 2,400,000÷30年＝80,000 → 累計額 720,000＋80,000＝<b>800,000</b><br>備品 (600,000−216,000)×0.4＝153,600 → 累計額 216,000＋153,600＝<b>369,600</b></p>
+<p><b>⑤ 借入金</b>　決算日の翌日から1年以内（X3年3月31日まで）に返済する 200,000 は<b>流動負債</b>、残り <b>800,000</b> は固定負債</p>
+<p><b>⑥ 経過勘定</b>　未払利息 → 未払費用 <b>15,000</b>、前払保険料 → 前払費用 <b>24,000</b></p>
+<p><b>⑦ 法人税等</b>　確定額180,000−中間納付80,000＝未払法人税等 <b>100,000</b></p>
+<p><b>流動資産合計</b> 820,000＋400,000＋550,000−19,000＋270,000＋24,000＝<b>2,045,000</b></p>
+<p class="tip">💡 B/Sは「期末の残高」。費用の金額（繰入額・減価償却費）ではなく、引当金や累計額の<b>残高</b>を書く。</p>`},
+
+{id:'s08', grp:'商業', part:'第2問', min:15, title:'連結会計（未実現利益・債権債務の消去）',
+ body:`<p>P社は数年前からS社の発行済株式の80%を保有し、支配している。当期（X2年4月1日〜X3年3月31日）の資料にもとづいて、連結財務諸表の各金額を答えなさい。のれんは考慮しなくてよい。</p>
+<p class="sh2">［資料1］個別財務諸表の金額（一部・単位：円）</p>
+<table class="tb"><tr><th></th><th>P社</th><th>S社</th></tr>
+<tr><td>売上高</td><td class="n">8,000,000</td><td class="n">3,000,000</td></tr>
+<tr><td>売上原価</td><td class="n">6,000,000</td><td class="n">2,200,000</td></tr>
+<tr><td>当期純利益</td><td class="n">900,000</td><td class="n">400,000</td></tr>
+<tr><td>売掛金</td><td class="n">1,500,000</td><td class="n">700,000</td></tr>
+<tr><td>貸倒引当金</td><td class="n">30,000</td><td class="n">14,000</td></tr>
+<tr><td>商品</td><td class="n">900,000</td><td class="n">500,000</td></tr>
+<tr><td>土地</td><td class="n">2,000,000</td><td class="n">1,000,000</td></tr></table>
+<p class="sh2">［資料2］連結会社間の取引</p>
+<ol class="ol2"><li>P社は当期からS社に商品を販売しており、原価に25%の利益を加算している。当期のP社のS社への売上高は 1,000,000円。</li>
+<li>S社の期首商品のうち 150,000円、期末商品のうち 200,000円 はP社から仕入れたものである。</li>
+<li>P社の売掛金のうち 300,000円 はS社に対するもの。P社は売掛金の期末残高に2%の貸倒引当金を設定している。</li>
+<li>当期中に、S社は帳簿価額 500,000円 の土地を 600,000円 でP社に売却した。P社は期末もこの土地を保有している。</li></ol>`,
+ sheet:`<table class="tb"><tr><td>連結損益計算書の 売上高</td><td>[[a]] 円</td></tr>
+<tr><td>連結損益計算書の 売上原価</td><td>[[b]] 円</td></tr>
+<tr><td>連結貸借対照表の 商品</td><td>[[c]] 円</td></tr>
+<tr><td>連結貸借対照表の 売掛金</td><td>[[d]] 円</td></tr>
+<tr><td>連結貸借対照表の 貸倒引当金</td><td>[[e]] 円</td></tr>
+<tr><td>連結貸借対照表の 土地</td><td>[[f]] 円</td></tr>
+<tr><td>非支配株主に帰属する当期純利益</td><td>[[g]] 円</td></tr></table>`,
+ ans:{a:10000000, b:7210000, c:1360000, d:1900000, e:38000, f:2900000, g:60000},
+ pts:{a:2, b:4, c:3, d:2, e:3, f:3, g:3},
+ ex:`<p><b>① 売上と仕入の相殺</b>　売上高 8,000,000＋3,000,000−1,000,000＝<b>10,000,000</b>（売上原価からも1,000,000を引く）</p>
+<p><b>② 商品の未実現利益（P社→S社：ダウンストリーム）</b>　利益率は 25/125＝20%<br>期末：200,000×20%＝40,000 → 売上原価に加算・商品から控除<br>期首：150,000×20%＝30,000 → 前期の未実現利益が当期に実現 → 売上原価から控除<br>売上原価 6,000,000＋2,200,000−1,000,000＋40,000−30,000＝<b>7,210,000</b><br>商品 900,000＋500,000−40,000＝<b>1,360,000</b></p>
+<p><b>③ 債権債務の相殺</b>　売掛金 1,500,000＋700,000−300,000＝<b>1,900,000</b><br>貸倒引当金 300,000×2%＝6,000 も減らす → 30,000＋14,000−6,000＝<b>38,000</b></p>
+<p><b>④ 土地の未実現利益（S社→P社：アップストリーム）</b>　600,000−500,000＝100,000 を消去 → 土地 2,000,000＋1,000,000−100,000＝<b>2,900,000</b><br>売ったのは子会社なので、未実現利益のうち20%（20,000）は非支配株主に負担させる</p>
+<p><b>⑤ 非支配株主に帰属する当期純利益</b>　S社の当期純利益400,000×20%−土地の未実現利益の負担分20,000＝<b>60,000</b></p>
+<p class="tip">💡 「誰が売ったか」がポイント。親会社が売ったら（ダウン）全額親会社の負担、子会社が売ったら（アップ）非支配株主も持分割合だけ負担する。</p>`},
+
+{id:'k09', grp:'工業', part:'第4問(2)', min:15, title:'工程別総合原価計算（累加法）',
+ body:`<p>当工場では2つの工程で製品を連続生産しており、累加法による工程別総合原価計算を採用している。次の資料にもとづいて、各問に答えなさい。月初仕掛品はない。</p>
+<table class="tb"><tr><th></th><th>第1工程</th><th>第2工程</th></tr>
+<tr><td>当月投入</td><td class="n">1,000個</td><td class="n">800個（第1工程完了品）</td></tr>
+<tr><td>月末仕掛品</td><td class="n">200個（50%）</td><td class="n">100個（40%）</td></tr>
+<tr><td>完成品</td><td class="n">800個</td><td class="n">700個</td></tr>
+<tr><td>直接材料費（当月）</td><td class="n">600,000円</td><td class="n">—</td></tr>
+<tr><td>加工費（当月）</td><td class="n">450,000円</td><td class="n">740,000円</td></tr></table>
+<p class="note2">第1工程の材料は工程の始点で投入する。第1工程の完了品はすべて第2工程の始点に投入される。（　）内は加工進捗度。</p>`,
+ sheet:`<p>問1　第1工程　月末仕掛品原価 [[a]] 円　　第1工程完了品原価 [[b]] 円</p>
+<p>問2　第2工程　月末仕掛品原価のうち 前工程費 [[c]] 円、加工費 [[d]] 円</p>
+<p>問3　最終完成品の総合原価 [[e]] 円　　完成品単位原価 [[f]] 円/個</p>`,
+ ans:{a:170000, b:880000, c:110000, d:40000, e:1470000, f:2100},
+ pts:{a:2, b:3, c:2, d:2, e:4, f:3},
+ ex:`<p><b>第1工程</b><br>材料 600,000÷1,000個＝600円 → 月末 200×600＝120,000<br>加工 換算量 800＋200×50%＝900個、450,000÷900＝500円 → 月末 100×500＝50,000<br>月末仕掛品 <b>170,000</b>　完了品 1,050,000−170,000＝<b>880,000</b>（800個、@1,100円）</p>
+<p><b>第2工程</b>　第1工程完了品の原価を<b>前工程費</b>として、始点投入の材料と同じように扱う<br>前工程費 880,000÷800個＝1,100円 → 月末 100×1,100＝<b>110,000</b><br>加工 換算量 700＋100×40%＝740個、740,000÷740＝1,000円 → 月末 40×1,000＝<b>40,000</b></p>
+<p><b>完成品</b> 880,000＋740,000−150,000＝<b>1,470,000</b>　単位原価 1,470,000÷700＝<b>2,100円</b></p>
+<p class="tip">💡 累加法は「前工程費＝第2工程の材料」と考えるだけ。工程ごとにボックス図を1つずつ描こう。</p>`},
+
+{id:'k10', grp:'工業', part:'第5問', min:12, title:'標準原価計算（勘定記入・シングルプラン）',
+ body:`<p>当社は製品Wを量産しており、標準原価計算を採用している。仕掛品勘定には<b>シングル・プラン</b>で記入する。次の資料にもとづいて、各問に答えなさい。</p>
+<p class="sh2">［資料1］製品W 1個あたりの標準原価</p>
+<table class="tb"><tr><td>直接材料費</td><td>300円/kg × 4kg</td><td class="n">1,200円</td></tr>
+<tr><td>直接労務費</td><td>1,000円/時間 × 1.5時間</td><td class="n">1,500円</td></tr>
+<tr><td>製造間接費</td><td>1,200円/時間 × 1.5時間</td><td class="n">1,800円</td></tr>
+<tr><th colspan="2">合計</th><td class="n"><b>4,500円</b></td></tr></table>
+<p class="sh2">［資料2］当月の生産データ</p>
+<p>月初仕掛品 200個（50%）／完成品 1,800個／月末仕掛品 300個（40%）　材料は工程の始点で投入</p>
+<p class="sh2">［資料3］当月の実際発生額</p>
+<p>直接材料費 2,350,000円／直接労務費 2,700,000円／製造間接費 3,300,000円</p>`,
+ sheet:`<p>問1　仕掛品勘定（単位：円）</p>
+<table class="tb taccount"><tr><th colspan="2">借方</th><th colspan="2">貸方</th></tr>
+<tr><td>月初有高</td><td>[[a]]</td><td>製品</td><td>[[e]]</td></tr>
+<tr><td>直接材料費</td><td>[[b]]</td><td>月末有高</td><td>[[f]]</td></tr>
+<tr><td>直接労務費</td><td>[[c]]</td><td></td><td></td></tr>
+<tr><td>製造間接費</td><td>[[d]]</td><td></td><td></td></tr></table>
+<p>問2　原価差異（総差異）</p>
+<table class="tb"><tr><td>直接材料費差異</td><td>[[g]] 円</td><td>[[gc=有利|不利]]</td></tr>
+<tr><td>直接労務費差異</td><td>[[h]] 円</td><td>[[hc=有利|不利]]</td></tr>
+<tr><td>製造間接費差異</td><td>[[i]] 円</td><td>[[ic=有利|不利]]</td></tr></table>
+<p>問3　パーシャル・プランの場合、仕掛品勘定の借方の当月投入額（直接材料費など）は [[j=標準原価|実際原価]] で記入する。</p>`,
+ ans:{a:570000, b:2280000, c:2730000, d:3276000, e:8100000, f:756000, g:70000, gc:'不利', h:30000, hc:'有利', i:24000, ic:'不利', j:'実際原価'},
+ pts:{a:1, b:1, c:1, d:1, e:2, f:2, g:1, h:1, i:1, j:1},
+ ex:`<p><b>① 当月投入量</b>　材料：1,800＋300−200＝<b>1,900個</b>　加工：1,800＋300×40%−200×50%＝<b>1,820個</b></p>
+<p><b>② シングル・プラン</b>は、仕掛品勘定の<b>すべて</b>を標準原価で記入する<br>月初 200×1,200＋100×(1,500＋1,800)＝240,000＋330,000＝<b>570,000</b><br>直接材料費 1,900×1,200＝<b>2,280,000</b>　直接労務費 1,820×1,500＝<b>2,730,000</b>　製造間接費 1,820×1,800＝<b>3,276,000</b><br>製品 1,800×4,500＝<b>8,100,000</b>　月末 300×1,200＋120×3,300＝<b>756,000</b>（貸借合計 8,856,000 ✓）</p>
+<p><b>③ 差異</b>（標準−実際）<br>材料 2,280,000−2,350,000＝<b>−70,000 不利</b>　労務 2,730,000−2,700,000＝<b>＋30,000 有利</b>　間接 3,276,000−3,300,000＝<b>−24,000 不利</b></p>
+<p><b>④ パーシャル・プラン</b>は、当月投入額を<b>実際原価</b>で記入し、仕掛品勘定の中で差異が出る（完成品・月末仕掛品は標準原価）。</p>
+<p class="tip">💡 シングル＝差異は材料・賃金・製造間接費の各勘定で出る。パーシャル＝差異は仕掛品勘定で出る。</p>`},
 ];
 const EXMAP = Object.fromEntries(EXAMS.map(p => [p.id, p]));
 
@@ -1875,12 +2057,13 @@ function renderHome(){
           <div class="kpi"><b>🔥${streak()}<small style="font-size:11px">日</small></b><span>連続学習</span></div>
           <div class="kpi"><b>⭐${masteredCount()}</b><span>マスター</span></div>
           ${examHtml}
+          ${(() => { const P = predict(); return P.any ? `<div class="kpi" data-act="go" data-v="stats" role="button"><b class="r-${P.total>=70?'good':P.total>=60?'mid':'bad'}">🎯${P.total}<small style="font-size:11px">点</small></b><span>予想得点</span></div>` : ''; })()}
         </div>
         ${weekHTML()}
       </div>
     </div>
     <button class="btn primary bigbtn" data-act="smart"><span class="ic">▶</span><span><b>サクッと5問</b><small>苦手・未学習・復習どきの問題からおすすめ</small></span></button>
-    <button class="btn exbig" data-act="go" data-v="exams"><span class="ic">📝</span><span><b>本試験形式で解く</b><small>第2〜5問の形式・計算は問題用紙に手書き｜自分の過去問PDFにも書き込める</small></span></button>
+    <button class="btn exbig" data-act="go" data-v="exams"><span class="ic">📝</span><span><b>本試験形式で解く</b><small>⏱ 90分の模擬試験・第2〜5問の形式・教科書や過去問の写真にも書き込める</small></span></button>
     <div class="quick">
       <button data-act="ox"><span class="ic">⚡</span><b>○×スピード</b><small>10問・1タップで答える</small></button>
       <button data-act="one"><span class="ic">🎲</span><b>1問だけ</b><small>30秒でできる</small></button>
@@ -2271,6 +2454,7 @@ const CIRC = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
 let ex = null, exTimer = null;
 const fmtAns = v => typeof v === 'number' ? yen(v) : esc(v);
 const toNum = s => { const t = String(s).replace(/[０-９．]/g, c => c === '．' ? '.' : String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[^0-9.\-]/g, ''); return t === '' ? null : Number(t); };
+const MOCK_MIN = 90, J_PT = 4; // 本試験：90分・仕訳1問4点
 // 採点の単位：金額＋有利/不利（キー＋c）は1セット
 function exItems(p){
   const keys = Object.keys(p.ans);
@@ -2278,70 +2462,126 @@ function exItems(p){
              .map(k => ({k, keys: keys.includes(k+'c') ? [k, k+'c'] : [k], pt: (p.pts && p.pts[k]) || 2}));
 }
 const exTotal = p => exItems(p).reduce((a, it) => a + it.pt, 0);
-function blankHTML(p, key, mod, no){
-  const ch = mod && mod.includes('|') ? mod.split('|') : null;
-  const size = ch ? 'c' : (mod || '');
-  const inner = ch ? ch.map(o => `<button class="chb" data-act="chs" data-k="${key}" data-v="${esc(o)}">${esc(o)}</button>`).join('')
-                   : (S.set.exInput === 'key' ? `<input class="exin" data-k="${key}" type="text" inputmode="decimal" autocomplete="off" aria-label="解答${no}">` : '');
-  return `<span class="bk ${size}" data-k="${key}"><span class="bx"><b class="no">${no}</b>${inner}</span>`+
-         `<span class="ca"><em>${fmtAns(p.ans[key])}</em>${ch ? '' : `<button class="mkb o" data-act="mark" data-k="${key}" data-v="1" aria-label="正解">○</button><button class="mkb x" data-act="mark" data-k="${key}" data-v="0" aria-label="不正解">×</button>`}</span></span>`;
+function blankHTML(part, key, mod, no){
+  const pk = part.pre + key, ch = mod && mod.includes('|') ? mod.split('|') : null;
+  const inner = ch ? ch.map(o => `<button class="chb" data-act="chs" data-k="${pk}" data-v="${esc(o)}">${esc(o)}</button>`).join('')
+                   : (S.set.exInput === 'key' ? `<input class="exin" data-k="${pk}" type="text" inputmode="decimal" autocomplete="off" aria-label="解答${no}">` : '');
+  return `<span class="bk ${ch ? 'c' : (mod || '')}" data-k="${pk}"><span class="bx"><b class="no">${no}</b>${inner}</span>`+
+         `<span class="ca"><em>${fmtAns(part.p.ans[key])}</em>${ch ? '' : `<button class="mkb o" data-act="mark" data-k="${pk}" data-v="1" aria-label="正解">○</button><button class="mkb x" data-act="mark" data-k="${pk}" data-v="0" aria-label="不正解">×</button>`}</span></span>`;
 }
-function sheetHTML(p){
+function sheetHTML(part){
   let n = 0;
-  return p.sheet.replace(/\[\[(\w+)(?:([:=])([^\]]+))?\]\]/g, (_, k, sep, mod) => blankHTML(p, k, mod, CIRC[n++] || n));
+  return part.p.sheet.replace(/\[\[(\w+)(?:([:=])([^\]]+))?\]\]/g, (_, k, sep, mod) => blankHTML(part, k, mod, CIRC[n++] || n));
 }
-function renderExams(){
-  const rec = S.exr || {};
-  const row = p => { const r = rec[p.id], tot = exTotal(p);
-    return `<button class="exrow" data-act="exopen" data-id="${p.id}">
-      <span class="exl"><span class="tag ${p.grp==='商業'?'g1':'g2'}">${p.part}</span><b>${esc(p.title)}</b><small>目安${p.min}分・${tot}点満点${r ? `・${r.n}回` : ''}</small></span>
-      <span class="exs ${r ? 'r-'+rateClass(Math.round(r.best/tot*100)) : 'r-none'}">${r ? `${r.best}<small>/${tot}</small>` : '未'}</span></button>`; };
-  view.innerHTML = `
-    <h1>本試験形式で解く</h1>
-    <p class="sub" style="margin:0 0 12px">第2〜5問と同じ形式のオリジナル問題。Apple Pencil で問題用紙の余白に計算を書き、解答欄に直接答えを書いて採点します。</p>
-    <div class="card"><h2>🏭 工業簿記（第4問・第5問）</h2>${EXAMS.filter(p=>p.grp==='工業').map(row).join('')}</div>
-    <div class="card"><h2>🏢 商業簿記（第2問・第3問）</h2>${EXAMS.filter(p=>p.grp==='商業').map(row).join('')}</div>
-    <div class="card" id="mydocs"><h2>📷 教科書・過去問の写真に書き込む</h2>
-      <p class="sub" style="margin:0 0 10px">手持ちの教科書・問題集・過去問の<b>問題ページ</b>を写真やPDFで取り込むと、その上に Apple Pencil で書き込んで解けます。<b>解答ページ</b>も取り込んでおくと、「📖 解答」で横に並べて答え合わせ → ページごとに ○△× をつけて、×と△だけ解き直せます。データはこのiPadの中だけに保存されます。</p>
-      <label class="btn primary filebtn">＋ 問題ページを取り込む（写真・PDF）<input type="file" id="docfile" accept="application/pdf,image/*" multiple hidden></label>
-      <div id="doclist"><p class="sub" style="margin:10px 0 0">読み込み中…</p></div>
-    </div>
-    <p class="note">問題はこのアプリのために作成したオリジナルです（市販問題集・過去問の転載ではありません）</p>`;
-  renderDocList();
+// 第1問・第4問(1)の仕訳（本試験CBTと同じく、勘定科目は選択・金額は入力）
+function jformHTML(j, n){
+  const q = QMAP[j.id], opt = `<option value=""></option>` + j.opts.map(o => `<option>${esc(o)}</option>`).join('');
+  const row = r => ['d','c'].map(sd => `<td><select class="jsel" data-j="${j.pre}" data-sd="${sd}" data-r="${r}" aria-label="${sd==='d'?'借方':'貸方'}科目">${opt}</select></td>
+    <td><input class="jamt" data-j="${j.pre}" data-sd="${sd}" data-r="${r}" type="text" inputmode="numeric" autocomplete="off" aria-label="金額"></td>`).join('');
+  return `<div class="mq" data-j="${j.pre}"><p class="mqq"><b>${n}.</b> ${esc(q.q)}</p>
+    <table class="tb jf"><tr><th colspan="2" class="dh">借方</th><th colspan="2" class="ch">貸方</th></tr>
+    <tr><th>勘定科目</th><th>金額</th><th>勘定科目</th><th>金額</th></tr>
+    ${[0,1,2,3].map(r => `<tr>${row(r)}</tr>`).join('')}</table><div class="jres"></div></div>`;
+}
+function partHTML(part, head){
+  const p = part.p;
+  return `${head ? `<div class="tags"><span class="tag ${p.grp==='商業'?'g1':'g2'}">${p.grp}簿記 ${p.part}</span><span class="tag">${part.full || exTotal(p)}点</span></div>
+      <h2 class="extitle">${esc(p.title)}</h2>` : `<p class="sh2">${esc(p.title)}</p>`}
+    <div class="exbody">${p.body}</div>
+    <h3 class="ansh">解答欄</h3>
+    <div class="exans">${sheetHTML(part)}</div>`;
+}
+/* cfg … {mode:'single'|'mock', secs:[{n:'第1問', js:[{id,opts}], parts:[{id, full}]}], t0, id} */
+function buildEx(cfg){
+  const e = {cfg, mode:cfg.mode, t0:cfg.t0 || Date.now(), graded:false, saved:false, mk:{}, ch:{}, parts:[], js:[], akeys:{}};
+  cfg.secs.forEach((sc, si) => {
+    sc._parts = sc.parts.map((x, pi) => { const part = {p:EXMAP[x.id], full:x.full, pre:`s${si}p${pi}_`, si}; e.parts.push(part);
+      Object.entries(part.p.ans).forEach(([k, v]) => e.akeys[part.pre+k] = {part, k, v}); return part; });
+    sc._js = sc.js.map((x, ji) => { const j = {...x, pre:`s${si}j${ji}`, si}; e.js.push(j); return j; });
+  });
+  return e;
 }
 function startExam(id){
   const p = EXMAP[id]; if(!p) return;
-  ex = {p, t0:Date.now(), graded:false, mk:{}, ch:{}};
+  runExam({mode:'single', id, secs:[{n:p.part, js:[], parts:[{id}]}]});
+}
+function pickOne(pred){ const pool = EXAMS.filter(p => pred(p) && !p.noMock); return pick(pool).id; }
+function jOpts(id){ const q = QMAP[id]; return shuffle([...new Set([...q.d.map(l=>l[0]), ...q.c.map(l=>l[0]), ...q.x])]); }
+function startMock(){
+  const sho = QS.filter(q => CMAP[q.cat].grp === '商業'), kou = QS.filter(q => CMAP[q.cat].grp === '工業');
+  const js = (n, pool) => smartPick(n, pool).map(id => ({id, opts:jOpts(id)}));
+  runExam({mode:'mock', secs:[
+    {n:'第1問', js:js(5, sho), parts:[]},
+    {n:'第2問', js:[], parts:[{id:pickOne(p => p.part === '第2問'), full:20}]},
+    {n:'第3問', js:[], parts:[{id:pickOne(p => p.part === '第3問'), full:20}]},
+    {n:'第4問', js:js(3, kou), parts:[{id:pickOne(p => p.part === '第4問(2)'), full:16}]},
+    {n:'第5問', js:[], parts:[{id:pickOne(p => p.part === '第5問'), full:12}]},
+  ]});
+}
+function runExam(cfg, restore){
+  ex = buildEx(cfg);
+  const mock = ex.mode === 'mock', secs = cfg.secs;
   go('exsheet');
+  const secHTML = (sc, si) => {
+    let body = '';
+    if(sc._js.length) body += `<p class="sh2">${mock && si === 0 ? '次の取引について仕訳しなさい。勘定科目は選択肢から選ぶこと。（各4点）' : '次の取引について仕訳しなさい。（各4点）'}</p>${sc._js.map((j, ji) => jformHTML(j, ji+1)).join('')}`;
+    body += sc._parts.map(part => partHTML(part, !mock)).join('');
+    return `<section class="msec ${si===0?'on':''}" data-s="${si}">
+      <div class="inkwrap exsheet" data-s="${si}"><div class="paper">
+        ${mock ? `<div class="tags"><span class="tag warn">模擬試験</span><span class="tag">${sc.n}（${secPts(sc)}点）</span></div>` : ''}
+        ${body}
+        <div class="calc"><span>計算用スペース（どこにでも書き込めます）</span></div>
+      </div></div><div class="msex"></div></section>`;
+  };
   view.innerHTML = `
-    <div class="qhead exhead"><div class="qtop"><button class="homebtn" data-act="home">← 一覧</button>
-      <div class="qtop-r"><span class="timer" id="extime">0:00</span><span class="prog">目安${p.min}分</span>${padBtnHTML()}</div></div>
+    <div class="qhead exhead"><div class="qtop"><button class="homebtn" data-act="home">${mock ? '中断' : '← 一覧'}</button>
+      <div class="qtop-r"><span class="timer" id="extime"></span><span class="prog">${mock ? `制限${MOCK_MIN}分・100点` : `目安${EXMAP[cfg.id].min}分`}</span>${padBtnHTML()}</div></div>
+      ${mock ? `<div class="seg mtabs">${secs.map((sc, si) => `<button class="${si===0?'on':''}" data-act="msec" data-v="${si}">${sc.n}</button>`).join('')}</div>` : ''}
       <div class="extools">${inkBarHTML('sheet')}
         <div class="seg exmode">${[['hand','✍️ 手書き'],['key','⌨️ 入力']].map(([k,l])=>`<button class="${S.set.exInput===k?'on':''}" data-act="exinput" data-v="${k}">${l}</button>`).join('')}</div>
         <button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋ 指で書く</button></div></div>
-    <div class="inkwrap exsheet" id="sheetInk"><div class="paper">
-      <div class="tags"><span class="tag ${p.grp==='商業'?'g1':'g2'}">${p.grp}簿記 ${p.part}</span><span class="tag">${exTotal(p)}点満点</span></div>
-      <h2 class="extitle">${esc(p.title)}</h2>
-      <div class="exbody">${p.body}</div>
-      <h3 class="ansh">解答欄</h3>
-      <div class="exans" id="exans">${sheetHTML(p)}</div>
-      <div class="calc"><span>計算用スペース（どこにでも書き込めます）</span></div>
-    </div></div>
+    ${secs.map(secHTML).join('')}
     <div id="exres"></div>
-    <div class="actions sticky" id="exact"><button class="btn primary" data-act="exgrade">採点する</button></div>`;
+    <div class="actions sticky" id="exact"></div>`;
   INKS.sheet?.destroy();
-  INKS.sheet = new Ink(document.getElementById('sheetInk'), {name:'sheet', width:2, scroll:true});
+  const g = new InkGroup('sheet'); INKS.sheet = g;
+  view.querySelectorAll('.exsheet').forEach(w => { const i = +w.dataset.s;
+    g.add(i, new Ink(w, {name:'sheet', width:2, scroll:true, tool:g.tool, onDown:() => { g.cur = i; }, onPush:() => g.pushed(i), onChange:() => mockDirty()})); });
   syncBar('sheet');
-  exTimer = setInterval(() => { const t = document.getElementById('extime'); if(!t) return; const s = Math.floor((Date.now()-ex.t0)/1000); t.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; t.classList.toggle('over', s > ex.p.min*60); }, 1000);
+  if(restore) restoreMock(restore);
+  ex.sec = 0; exActions();
+  tickEx(); exTimer = setInterval(tickEx, 1000);
   if(!S.seenExTip){ S.seenExTip = true; save(); toast('Apple Pencil で書く・指でスクロール'); }
+}
+function secPts(sc){ return sc._js.length*J_PT + sc._parts.reduce((a, pt) => a + (pt.full || exTotal(pt.p)), 0); }
+function tickEx(){
+  const t = document.getElementById('extime'); if(!t || !ex) return;
+  const s = Math.floor((Date.now() - ex.t0)/1000), mm = x => `${Math.floor(x/60)}:${String(x%60).padStart(2,'0')}`;
+  if(ex.mode === 'mock'){ const left = MOCK_MIN*60 - s; t.textContent = left >= 0 ? `残り ${mm(left)}` : `超過 ${mm(-left)}`; t.classList.toggle('over', left < 0);
+    if(left === 0) toast('⏰ 90分たちました。本試験ならここで終了です'); }
+  else { t.textContent = mm(s); t.classList.toggle('over', s > EXMAP[ex.cfg.id].min*60); }
+}
+function showSec(i){
+  if(!ex) return; ex.sec = i;
+  view.querySelectorAll('.msec').forEach(s => s.classList.toggle('on', +s.dataset.s === i));
+  view.querySelectorAll('.mtabs button').forEach(b => b.classList.toggle('on', +b.dataset.v === i));
+  if(INKS.sheet) INKS.sheet.cur = i;
+  exActions(); window.scrollTo({top:0});
+}
+function exActions(){
+  const el = document.getElementById('exact'); if(!el || !ex) return;
+  if(ex.graded){ updateExScore(); return; }
+  const mock = ex.mode === 'mock', last = ex.sec === ex.cfg.secs.length - 1;
+  el.innerHTML = mock && !last
+    ? `<button class="btn ghost" data-act="exgrade">採点</button><button class="btn primary" data-act="msec" data-v="${ex.sec+1}">${ex.cfg.secs[ex.sec+1].n}へ →</button>`
+    : `<button class="btn primary" data-act="exgrade">${mock ? '全体を採点する' : '採点する'}</button>`;
 }
 function setExInput(v){
   if(!ex || ex.graded || S.set.exInput === v) return;
-  // 入力済みの値は残す
   const vals = {}; view.querySelectorAll('.exin').forEach(i => vals[i.dataset.k] = i.value);
   S.set.exInput = v; save();
   view.querySelectorAll('.exmode button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
-  view.querySelectorAll('#exans .bk:not(.c) .bx').forEach(bx => {
+  view.querySelectorAll('.exans .bk:not(.c) .bx').forEach(bx => {
     const k = bx.parentElement.dataset.k, inp = bx.querySelector('input');
     if(v === 'key' && !inp){ bx.insertAdjacentHTML('beforeend', `<input class="exin" data-k="${k}" type="text" inputmode="decimal" autocomplete="off">`); bx.lastChild.value = vals[k] || ''; }
     if(v === 'hand' && inp) inp.remove();
@@ -2352,32 +2592,51 @@ function chooseEx(b){
   if(!ex || ex.graded) return;
   const k = b.dataset.k; ex.ch[k] = ex.ch[k] === b.dataset.v ? undefined : b.dataset.v;
   view.querySelectorAll(`.chb[data-k="${k}"]`).forEach(x => x.classList.toggle('on', x.dataset.v === ex.ch[k]));
-  buzz(8);
+  buzz(8); mockDirty();
+}
+function collectJ(pre){
+  const side = sd => { const lines = []; let bad = false;
+    view.querySelectorAll(`.jsel[data-j="${pre}"][data-sd="${sd}"]`).forEach(s => {
+      const a = view.querySelector(`.jamt[data-j="${pre}"][data-sd="${sd}"][data-r="${s.dataset.r}"]`), n = toNum(a.value);
+      if(s.value) lines.push([s.value, n || 0]); else if(n) bad = true; });
+    return {lines, bad}; };
+  return {d:side('d'), c:side('c')};
 }
 function gradeExam(){
   if(!ex || ex.graded) return;
-  const p = ex.p; ex.graded = true;
-  clearInterval(exTimer); ex.sec = Math.floor((Date.now()-ex.t0)/1000);
-  for(const [k, v] of Object.entries(p.ans)){
-    if(typeof v !== 'number'){ ex.mk[k] = ex.ch[k] === v; continue; }
-    const inp = view.querySelector(`.exin[data-k="${k}"]`);
-    if(inp && inp.value.trim() !== '') ex.mk[k] = toNum(inp.value) === v;
-    else if(inp) ex.mk[k] = false;
+  if(ex.mode === 'mock' && !confirm('全体を採点します。採点後は解答を直せません。よろしいですか？')) return;
+  ex.graded = true; clearInterval(exTimer);
+  ex.secs = Math.floor((Date.now() - ex.t0)/1000);
+  for(const [pk, a] of Object.entries(ex.akeys)){
+    if(typeof a.v !== 'number'){ ex.mk[pk] = ex.ch[pk] === a.v; continue; }
+    const inp = view.querySelector(`.exin[data-k="${pk}"]`);
+    if(inp) ex.mk[pk] = inp.value.trim() !== '' && toNum(inp.value) === a.v;
   }
-  view.querySelectorAll('.exin, .chb').forEach(el => el.disabled = true);
-  view.querySelectorAll('.chb').forEach(b => { if(b.dataset.v === p.ans[b.dataset.k]) b.classList.add('ans'); });
-  document.getElementById('exans').classList.add('graded');
+  ex.js.forEach(j => {
+    const q = QMAP[j.id], u = collectJ(j.pre);
+    const ok = !u.d.bad && !u.c.bad && sameMap(merge(u.d.lines), merge(q.d), true) && sameMap(merge(u.c.lines), merge(q.c), true);
+    ex.mk['J'+j.pre] = ok;
+    const box = view.querySelector(`.mq[data-j="${j.pre}"]`);
+    box.classList.add(ok ? 'ok' : 'ng');
+    box.querySelector('.jres').innerHTML = `<p class="jlabel"><b class="${ok?'r-good':'r-bad'}">${ok ? '○ 正解' : '× 不正解'}</b>　正解の仕訳</p>${jtable(q.d, q.c)}${EX[q.id] ? `<div class="point"><span>💡 ポイント</span>${esc(EX[q.id].p)}</div>` : ''}`;
+  });
+  view.querySelectorAll('.exin, .chb, .jsel, .jamt').forEach(el => el.disabled = true);
+  view.querySelectorAll('.chb').forEach(b => { if(b.dataset.v === ex.akeys[b.dataset.k]?.v) b.classList.add('ans'); });
+  view.querySelectorAll('.exans').forEach(x => x.classList.add('graded'));
+  ex.cfg.secs.forEach((sc, si) => {
+    const box = view.querySelector(`.msec[data-s="${si}"] .msex`);
+    if(box && sc._parts.length) box.innerHTML = sc._parts.map(pt => `<div class="card"><h2>📝 解説：${esc(pt.p.title)}</h2><div class="exex">${pt.p.ex}</div></div>`).join('');
+  });
   paintMarks();
-  document.getElementById('exres').innerHTML = `
-    <div class="card fb" id="exscore"></div>
-    <div class="card"><h2>📝 解説（計算の流れ）</h2><div class="exex">${p.ex}</div></div>`;
+  document.getElementById('exres').innerHTML = `<div class="card fb" id="exscore"></div>`;
+  clearMockState();
   updateExScore();
-  const hand = Object.keys(p.ans).some(k => ex.mk[k] === undefined);
-  if(hand) toast('解答欄の下の正解を見て、○か×をつけてください');
-  document.getElementById('exans').scrollIntoView({behavior:'smooth', block:'start'});
+  if(Object.keys(ex.akeys).some(k => ex.mk[k] === undefined)) toast('解答欄の下の正解を見て、○か×をつけてください');
+  if(ex.mode === 'mock'){ document.getElementById('exscore').scrollIntoView({behavior:'smooth', block:'start'}); }
+  else view.querySelector('.exans').scrollIntoView({behavior:'smooth', block:'start'});
 }
 function paintMarks(){
-  view.querySelectorAll('#exans .bk').forEach(bk => {
+  view.querySelectorAll('.exans .bk').forEach(bk => {
     const m = ex.mk[bk.dataset.k];
     bk.classList.toggle('ok', m === true); bk.classList.toggle('ng', m === false);
     bk.querySelectorAll('.mkb').forEach(b => b.classList.toggle('on', (b.dataset.v === '1') === m && m !== undefined));
@@ -2389,34 +2648,105 @@ function markEx(b){
   ex.mk[k] = ex.mk[k] === v ? undefined : v;
   paintMarks(); updateExScore(); buzz(8);
 }
+function partScore(part){
+  const raw = exItems(part.p).reduce((a, it) => a + (it.keys.every(k => ex.mk[part.pre+k] === true) ? it.pt : 0), 0), tot = exTotal(part.p);
+  return {raw, tot, pts: part.full ? Math.round(raw * part.full / tot) : raw};
+}
+function secScore(sc){ return sc._js.reduce((a, j) => a + (ex.mk['J'+j.pre] ? J_PT : 0), 0) + sc._parts.reduce((a, pt) => a + partScore(pt).pts, 0); }
 function updateExScore(){
-  const p = ex.p, items = exItems(p), tot = exTotal(p);
-  const left = Object.keys(p.ans).filter(k => ex.mk[k] === undefined).length;
-  const score = items.reduce((a, it) => a + (it.keys.every(k => ex.mk[k] === true) ? it.pt : 0), 0);
-  ex.score = score;
-  const rate = Math.round(score/tot*100), mm = Math.floor(ex.sec/60), ss = ex.sec%60;
-  const el = document.getElementById('exscore');
-  el.className = `card fb ${left ? '' : rate >= 70 ? 'ok' : 'ng'}`;
-  el.innerHTML = `<div class="verdict"><b class="r-${left?'none':rateClass(rate)}">${score} / ${tot}点</b><span class="sub">時間 ${mm}分${ss}秒（目安${p.min}分）</span></div>
-    ${left ? `<p class="selfq">あと <b>${left}か所</b> ○×をつけてください。<button class="mini" data-act="markrest" style="margin-left:6px">残りを全部○にする</button></p>`
-           : `<p style="margin:0;font-weight:700" class="r-${rateClass(rate)}">${rate >= 90 ? '完ぺき！ この形式はもう大丈夫' : rate >= 70 ? '合格ライン（7割）クリア！' : 'まちがえた所は解説の計算の流れを確認しよう'}</p>`}`;
+  const el = document.getElementById('exscore'); if(!el) return;
+  const secs = ex.cfg.secs, mock = ex.mode === 'mock';
+  const left = Object.keys(ex.akeys).filter(k => ex.mk[k] === undefined).length;
+  const tot = secs.reduce((a, sc) => a + secPts(sc), 0), score = secs.reduce((a, sc) => a + secScore(sc), 0);
+  ex.score = score; ex.total = tot;
+  const rate = Math.round(score/tot*100), mm = Math.floor(ex.secs/60), ss = ex.secs%60;
+  const limit = mock ? MOCK_MIN : EXMAP[ex.cfg.id].min;
+  const pass = mock ? score >= 70 : rate >= 70;
+  el.className = `card fb ${left ? '' : pass ? 'ok' : 'ng'}`;
+  el.innerHTML = `<div class="verdict"><b class="r-${left?'none':rateClass(rate)}">${score} / ${tot}点</b>${mock && !left ? `<b class="${pass?'r-good':'r-bad'}" style="font-size:18px">${pass ? '🎉 合格ライン' : '不合格ライン'}</b>` : ''}<span class="sub">時間 ${mm}分${ss}秒（${mock?'制限':'目安'}${limit}分）</span></div>
+    ${mock ? `<table class="tb mres">${secs.map((sc, si) => `<tr><td><button class="link" data-act="msec" data-v="${si}">${sc.n}</button></td><td class="n"><b>${secScore(sc)}</b> / ${secPts(sc)}点</td><td><span class="meter"><span class="bg-${rateClass(Math.round(secScore(sc)/secPts(sc)*100))}" style="width:${secScore(sc)/secPts(sc)*100}%"></span></span></td></tr>`).join('')}</table>` : ''}
+    ${left ? `<p class="selfq">あと <b>${left}か所</b> ○×をつけてください${mock ? '（各大問のタブで確認）' : ''}。<button class="mini" data-act="markrest" style="margin-left:6px">残りを全部○にする</button></p>`
+           : `<p style="margin:0;font-weight:700" class="r-${rateClass(rate)}">${mock ? (pass ? '本番もこの調子！ 点が低い大問を重点的に復習しよう' : `合格まであと${70-score}点。点が低い大問から復習しよう`) : rate >= 90 ? '完ぺき！ この形式はもう大丈夫' : rate >= 70 ? '合格ライン（7割）クリア！' : 'まちがえた所は解説の計算の流れを確認しよう'}</p>`}`;
   document.getElementById('exact').innerHTML = ex.saved
-    ? `<button class="btn ghost" data-act="exagain">もう一度</button><button class="btn primary" data-act="exlist">一覧へ</button>`
+    ? `<button class="btn ghost" data-act="exagain">${mock ? 'もう1回（別の問題）' : 'もう一度'}</button><button class="btn primary" data-act="exlist">一覧へ</button>`
     : `<button class="btn primary" data-act="exsave" ${left?'disabled':''}>${left ? `○×をつけてください（残り${left}）` : '記録して終える'}</button>`;
 }
 function saveExam(){
   if(!ex || ex.saved) return;
-  const p = ex.p, tot = exTotal(p);
   S.exr = S.exr || {};
-  const r = S.exr[p.id] || {n:0, best:0};
-  r.n++; r.last = ex.score; r.best = Math.max(r.best, ex.score); r.ts = Date.now();
-  S.exr[p.id] = r;
+  ex.parts.forEach(part => {
+    const {raw} = partScore(part), r = S.exr[part.p.id] || {n:0, best:0};
+    r.n++; r.last = raw; r.best = Math.max(r.best, raw); r.ts = Date.now(); S.exr[part.p.id] = r;
+  });
+  ex.js.forEach(j => { record(j.id, !!ex.mk['J'+j.pre]); });
+  if(ex.mode === 'mock'){
+    S.mock = S.mock || [];
+    S.mock.push({ts:Date.now(), score:ex.score, s:ex.cfg.secs.map(secScore), sec:ex.secs});
+    if(S.mock.length > 50) S.mock.shift();
+  }
   ex.saved = true;
-  const xp = Math.round(ex.score/tot*30) + 5;
+  const xp = Math.round(ex.score/ex.total*30) + 5 + (ex.mode === 'mock' ? 30 : 0);
   addXP(xp); checkBadges(); save();
-  if(ex.score === tot) confetti(100);
+  if(ex.score === ex.total || (ex.mode === 'mock' && ex.score >= 70)) confetti(120);
   toast(`記録しました（+${xp} XP）`);
   updateExScore(); flushCelebrate();
+}
+/* ---------- 模擬試験の途中保存（iPadでアプリが再読み込みされても続きから） ---------- */
+let mockTimer = null;
+function mockDirty(){ if(!ex || ex.mode !== 'mock' || ex.graded) return; clearTimeout(mockTimer); mockTimer = setTimeout(saveMockState, 800); }
+function saveMockState(){
+  if(!ex || ex.mode !== 'mock' || ex.graded) return;
+  const cfg = {mode:'mock', t0:ex.t0, secs:ex.cfg.secs.map(sc => ({n:sc.n, js:sc.js, parts:sc.parts}))};
+  const vals = {}; view.querySelectorAll('.exin, .jsel, .jamt').forEach(el => { if(el.value) vals[el.dataset.k || `${el.dataset.j}:${el.dataset.sd}:${el.dataset.r}:${el.tagName}`] = el.value; });
+  const ink = (INKS.sheet?.pages || []).map(k => k ? k.strokes : []);
+  DB.putInk('mock:state', {cfg, vals, ch:ex.ch, ink, ts:Date.now()}).catch(() => {});
+}
+function clearMockState(){ clearTimeout(mockTimer); DB.putInk('mock:state', null).catch(() => {}); }
+function restoreMock(st){
+  Object.entries(st.vals || {}).forEach(([k, v]) => {
+    let el;
+    if(k.includes(':')){ const [j, sd, r, tag] = k.split(':'); el = view.querySelector(`${tag === 'SELECT' ? '.jsel' : '.jamt'}[data-j="${j}"][data-sd="${sd}"][data-r="${r}"]`); }
+    else el = view.querySelector(`.exin[data-k="${k}"]`);
+    if(el) el.value = v;
+  });
+  ex.ch = st.ch || {};
+  Object.entries(ex.ch).forEach(([k, v]) => view.querySelectorAll(`.chb[data-k="${k}"]`).forEach(x => x.classList.toggle('on', x.dataset.v === v)));
+  (st.ink || []).forEach((s, i) => { const k = INKS.sheet.pages[i]; if(k && s){ k.strokes = s; k.redraw(); } });
+}
+async function resumeMock(){
+  const st = await DB.ink('mock:state').catch(() => null);
+  if(!st){ toast('続きのデータが見つかりませんでした'); renderExams(); return; }
+  st.cfg.secs.forEach(sc => sc.parts = sc.parts.filter(x => EXMAP[x.id]));
+  runExam(st.cfg, st);
+}
+function renderExams(){
+  const rec = S.exr || {};
+  const row = p => { const r = rec[p.id], tot = exTotal(p);
+    return `<button class="exrow" data-act="exopen" data-id="${p.id}">
+      <span class="exl"><span class="tag ${p.grp==='商業'?'g1':'g2'}">${p.part}</span><b>${esc(p.title)}</b><small>目安${p.min}分・${tot}点満点${r ? `・${r.n}回` : ''}</small></span>
+      <span class="exs ${r ? 'r-'+rateClass(Math.round(r.best/tot*100)) : 'r-none'}">${r ? `${r.best}<small>/${tot}</small>` : '未'}</span></button>`; };
+  const ms = (S.mock || []).slice(-5).reverse();
+  const grp = (g, parts) => parts.map(pt => { const ps = EXAMS.filter(p => p.grp === g && p.part.startsWith(pt)); return ps.length ? `<p class="grp" style="margin-top:8px">${pt}</p>${ps.map(row).join('')}` : ''; }).join('');
+  view.innerHTML = `
+    <h1>本試験形式で解く</h1>
+    <p class="sub" style="margin:0 0 12px">第1〜5問と同じ形式のオリジナル問題。Apple Pencil で問題用紙の余白に計算を書き、解答欄に直接答えを書いて採点します。</p>
+    <div class="card mockcard"><h2>⏱ 模擬試験（90分・100点）</h2>
+      <p class="sub" style="margin:0 0 10px">第1問〜第5問を本試験と同じ配点で出題。70点以上で合格ライン。途中でアプリを閉じても続きから再開できます。</p>
+      <div id="mockresume"></div>
+      <button class="btn primary" data-act="mockstart">模擬試験をはじめる</button>
+      ${ms.length ? `<p class="label" style="margin:12px 0 4px">最近の結果</p><ul class="rlist">${ms.map(m => `<li><span class="mk ${m.score>=70?'o':'x'}">${m.score>=70?'○':'×'}</span><span style="flex:1"><b>${m.score}点</b>　<span class="sub">${m.s.map((x, i) => `第${i+1}問 ${x}`).join('・')}</span></span><span class="sub">${new Date(m.ts).toLocaleDateString('ja-JP')}</span></li>`).join('')}</ul>` : ''}
+    </div>
+    <div class="card"><h2>🏢 商業簿記（第2問・第3問）</h2>${grp('商業', ['第2問','第3問'])}</div>
+    <div class="card"><h2>🏭 工業簿記（第4問・第5問）</h2>${grp('工業', ['第4問','第5問'])}</div>
+    <div class="card" id="mydocs"><h2>📷 教科書・過去問の写真に書き込む</h2>
+      <p class="sub" style="margin:0 0 10px">手持ちの教科書・問題集・過去問の<b>問題ページ</b>を写真やPDFで取り込むと、その上に Apple Pencil で書き込んで解けます。<b>解答ページ</b>も取り込んでおくと、「📖 解答」で横に並べて答え合わせ → ページごとに ○△× をつけて、×と△だけ解き直せます。データはこのiPadの中だけに保存されます。</p>
+      <label class="btn primary filebtn">＋ 問題ページを取り込む（写真・PDF）<input type="file" id="docfile" accept="application/pdf,image/*" multiple hidden></label>
+      <div id="doclist"><p class="sub" style="margin:10px 0 0">読み込み中…</p></div>
+    </div>
+    <p class="note">問題はこのアプリのために作成したオリジナルです（市販問題集・過去問の転載ではありません）</p>`;
+  renderDocList();
+  DB.ink('mock:state').then(st => { const box = document.getElementById('mockresume'); if(st && box){ const m = Math.floor((Date.now()-st.t0)/60000);
+    box.innerHTML = `<div class="resume card" style="margin:0 0 10px"><div class="t"><b>▶ 続きから</b><span class="sub">開始から${m}分経過</span></div><button class="btn primary" data-act="mockresume">再開</button></div>`; } }).catch(() => {});
 }
 
 /* =========================================================
@@ -2529,11 +2859,13 @@ function closeDoc(){
   docv.io?.disconnect(); INKS.doc?.destroy(); delete INKS.doc;
   [...docv.urls, ...docv.ansUrls].forEach(u => URL.revokeObjectURL(u));
   document.getElementById('padAns').innerHTML = '';
-  document.body.classList.remove('has-ans', 'pad-ans');
+  document.body.classList.remove('has-ans');
+  if(document.body.classList.contains('pad-ans')) setPadTab('memo');
   docv = null;
 }
 function setPadTab(v){
   document.body.classList.toggle('pad-ans', v === 'ans');
+  document.body.classList.toggle('pad-calc', v === 'calc');
   document.querySelectorAll('#pad .padtabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
 }
 function showAnswers(){
@@ -2574,7 +2906,7 @@ async function openDoc(id, opt = {}){
   document.body.classList.toggle('has-ans', ans.length > 0);
   document.getElementById('padAns').innerHTML = ans.map((pg, i) =>
     `<img src="${ansUrls[i]}" alt="解答${i+1}ページ" style="aspect-ratio:${pg.w}/${pg.h}"><p class="pgno">解答 ${i+1} / ${ans.length}</p>`).join('');
-  setPadTab('memo');
+  if(!document.body.classList.contains('pad-calc')) setPadTab('memo');
   const g = new InkGroup('doc'); INKS.doc = g;
   const wraps = [...view.querySelectorAll('.pg')];
   wraps.forEach((w, i) => {
@@ -2627,6 +2959,45 @@ async function delDoc(id){
   await DB.delDoc(d); toast('削除しました'); renderDocList();
 }
 
+
+/* ---------- 予想得点（いまの実力で本試験を受けたら何点か） ---------- */
+function jRate(g){
+  const qs = QS.filter(q => CMAP[q.cat].grp === g); let learned = 0, ok = 0;
+  qs.forEach(q => { const r = S.rec[q.id]; if(r){ learned++; if(r.last !== false) ok++; } });
+  return {rate: learned ? ok/learned : null, learned, total: qs.length};
+}
+function exRate(part){
+  const ps = EXAMS.filter(p => p.part === part && S.exr && S.exr[p.id]);
+  if(!ps.length) return {rate:null, n:0, total:EXAMS.filter(p => p.part === part).length};
+  return {rate: ps.reduce((a, p) => a + S.exr[p.id].last / exTotal(p), 0) / ps.length, n:ps.length, total:EXAMS.filter(p => p.part === part).length};
+}
+function predict(){
+  const js = jRate('商業'), jk = jRate('工業'), e2 = exRate('第2問'), e3 = exRate('第3問'), e4 = exRate('第4問(2)'), e5 = exRate('第5問');
+  const pt = (r, full) => r.rate === null ? 0 : Math.round(r.rate * full);
+  const rows = [
+    {n:'第1問', d:'仕訳（商業）', full:20, pts:pt(js, 20), none:js.rate === null, note:`学習 ${js.learned}/${js.total}問`, act:'smart'},
+    {n:'第2問', d:'個別論点・連結など', full:20, pts:pt(e2, 20), none:e2.rate === null, note:`${e2.n}/${e2.total}題`, act:'exams'},
+    {n:'第3問', d:'財務諸表の作成', full:20, pts:pt(e3, 20), none:e3.rate === null, note:`${e3.n}/${e3.total}題`, act:'exams'},
+    {n:'第4問', d:'工業 仕訳＋計算', full:28, pts:pt(jk, 12) + pt(e4, 16), none:jk.rate === null && e4.rate === null, part: jk.rate === null || e4.rate === null, note:`仕訳 ${jk.learned}/${jk.total}問・計算 ${e4.n}/${e4.total}題`, act: jk.rate === null ? 'smart' : 'exams'},
+    {n:'第5問', d:'標準原価・CVPなど', full:12, pts:pt(e5, 12), none:e5.rate === null, note:`${e5.n}/${e5.total}題`, act:'exams'},
+  ];
+  const total = rows.reduce((a, r) => a + r.pts, 0), none = rows.filter(r => r.none || r.part).length;
+  const lowCov = js.learned < js.total*0.5 || jk.learned < jk.total*0.5;
+  const weak = rows.slice().sort((a, b) => (a.pts/a.full) - (b.pts/b.full))[0];
+  return {rows, total, none, lowCov, weak, any: rows.some(r => !r.none)};
+}
+function predictHTML(){
+  const P = predict(), last = (S.mock || []).slice(-1)[0];
+  return `<div class="card pred"><h2>🎯 予想得点　<b class="big2 r-${P.total>=70?'good':P.total>=60?'mid':'bad'}">${P.total}</b><span class="sub">/100点（合格70点）</span></h2>
+    ${P.rows.map(r => `<div class="prow"><span class="pn"><b>${r.n}</b><small>${r.d}</small></span>
+      <span class="meter"><span class="bg-${rateClass(Math.round(r.pts/r.full*100))}" style="width:${r.pts/r.full*100}%"></span><i style="left:70%"></i></span>
+      <span class="pp">${r.none ? '<span class="sub">未挑戦</span>' : `<b>${r.pts}</b>/${r.full}`}</span></div>
+      <p class="pnote">${r.note}${r.part && !r.none ? '（一部未挑戦）' : ''}</p>`).join('')}
+    <p class="sub" style="margin:8px 0 0">${P.none ? `未挑戦の大問は0点で計算しています。` : ''}${P.lowCov ? '仕訳はまだ学習した問題が半分未満なので、予想は参考程度に。' : ''}各問題の<b>最新の結果</b>から計算しています。${last ? `直近の模擬試験は <b>${last.score}点</b>。` : ''}</p>
+    ${P.any ? `<button class="btn primary" style="margin-top:10px" data-act="${P.weak.act === 'smart' ? 'smart' : 'go'}" data-v="exams">いちばん伸ばせる ${P.weak.n}（${P.weak.d}）を練習</button>` : `<button class="btn primary" style="margin-top:10px" data-act="go" data-v="exams">模擬試験・本試験形式に挑戦</button>`}
+  </div>`;
+}
+
 /* ---------- 成績 ---------- */
 function catStats(cid){
   const qs = QS.filter(q=>q.cat===cid); let n=0, c=0, learned=0, wrong=0, master=0;
@@ -2652,7 +3023,8 @@ function renderStats(){
   const weak = CATS.map(c=>({c, s:catStats(c.id)})).filter(o=>o.s.n>=3 && o.s.rate<80).sort((a,b)=>a.s.rate-b.s.rate).slice(0,3);
   view.innerHTML = `
     <h1>成績</h1>
-    <div class="card lvcard" style="margin-top:10px">
+    <div style="margin-top:10px">${predictHTML()}</div>
+    <div class="card lvcard">
       <div class="lvbadge"><small>Lv.</small><b>${lv.lv}</b></div>
       <div class="lvbody"><div class="lvtitle">${esc(lv.title)}</div>
         <div class="xpbar"><span style="width:${lv.cur/lv.need*100}%"></span></div>
@@ -2699,6 +3071,9 @@ function renderSettings(){
         <li><b>サクッと5問</b>：苦手・未学習・復習どきの問題を自動で選びます</li>
         <li><b>○×スピード</b>：表示された仕訳が正しいか1タップで答えます</li>
         <li>仕訳は、勘定科目を<b>タップ</b>すると選択中の欄に入ります</li>
+        <li><b>⏱ 模擬試験</b>：90分・100点で第1〜5問を通しで解き、70点の合格ラインを判定。途中で閉じても再開できます</li>
+        <li><b>🎯 予想得点</b>：成績タブで、いま受けたら何点か・どの大問を伸ばすべきかがわかります</li>
+        <li><b>🧮 電卓</b>：計算メモの「電卓」タブ。結果は「→ 解答欄へ」で入力欄に入れられます</li>
         <li><b>📝 本試験形式</b>：第2〜5問と同じ形式の問題。Apple Pencil で問題用紙に計算を書き込み、解答欄に直接答えを書いて採点します</li>
         <li><b>📷 自分の過去問</b>：手持ちの過去問題集・模試のPDFや写真を取り込んで、その上に書き込んで解けます</li>
         <li><b>✏️ メモ</b>：出題中の右上ボタンで計算用紙を開閉。iPadを横向きにすると問題の横に並びます（左利きなら「⇆」か設定で左側に）（問題が変わると新しいページに。↶で戻せます）</li>
@@ -2916,11 +3291,83 @@ function inkOp(name, op){
 }
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => Object.values(INKS).forEach(k => k.redraw()));
 
+
+/* ---------- 電卓（本試験は電卓持ち込みOK。iPadだけで練習するとき用） ---------- */
+const CK = [['MC','fn'],['MR','fn'],['M−','fn'],['M＋','fn'],['C','fn cl'],['←','fn'],['%','fn'],['÷','op'],['7'],['8'],['9'],['×','op'],['4'],['5'],['6'],['−','op'],['1'],['2'],['3'],['＋','op'],['0'],['00'],['.'],['=','eq']];
+function calcHTML(){
+  return `<div class="calcui" id="padCalc"><div class="cdisp"><div class="cl"><span class="cm" id="cmem"></span><span id="cexpr"></span>
+    <button class="mini cins" data-act="calcins">→ 解答欄へ</button></div><b id="cval">0</b></div>
+    <div class="ctape" id="ctape"></div>
+    <div class="ckeys">${CK.map(([k, c]) => `<button class="ck ${c||''}" data-act="ck" data-k="${k}">${k}</button>`).join('')}</div></div>`;
+}
+const CS = {acc:null, op:null, cur:'0', fresh:true, rec:false, mem:0, err:false, tape:[]};
+const cfix = x => Number(Number(x).toPrecision(12));
+const cfmt = x => { if(!isFinite(x)) return 'E'; return cfix(x).toLocaleString('ja-JP', {maximumFractionDigits:8}); };
+function cshow(){
+  const cur = CS.cur, [i, d] = cur.split('.');
+  const main = CS.err ? 'E' : (CS.fresh && CS.acc !== null && CS.op) ? cfmt(CS.acc) : Number(i).toLocaleString('ja-JP') + (cur.includes('.') ? '.' + (d || '') : '');
+  document.getElementById('cval').textContent = cur.startsWith('-') && !CS.fresh ? '-' + main.replace('-', '') : main;
+  document.getElementById('cexpr').textContent = CS.op && CS.acc !== null ? `${cfmt(CS.acc)} ${CS.op}` : '';
+  document.getElementById('cmem').textContent = CS.mem ? 'M' : '';
+  document.getElementById('ctape').innerHTML = CS.tape.slice(-5).map(t => `<div>${esc(t)}</div>`).join('');
+  const tp = document.getElementById('ctape'); tp.scrollTop = tp.scrollHeight;
+}
+function capply(a, op, b){ return op === '＋' ? a + b : op === '−' ? a - b : op === '×' ? a * b : b === 0 ? NaN : a / b; }
+function cequal(b){
+  const res = cfix(capply(CS.acc, CS.op, b));
+  CS.tape.push(`${cfmt(CS.acc)} ${CS.op} ${cfmt(b)} = ${cfmt(res)}`);
+  if(!isFinite(res)){ CS.err = true; CS.acc = null; CS.op = null; CS.cur = '0'; CS.fresh = true; return; }
+  CS.cur = String(res); CS.acc = null; CS.op = null; CS.fresh = true;
+}
+function calcKey(k){
+  if(CS.err && k !== 'C') return;
+  const num = () => Number(CS.cur), rec = CS.rec; CS.rec = false;
+  if(/^\d+$/.test(k)){
+    if(CS.fresh || rec){ CS.cur = k === '00' ? '0' : k; CS.fresh = false; }
+    else if(CS.cur.replace(/[-.]/g, '').length < 12) CS.cur = CS.cur === '0' ? (k === '00' ? '0' : k) : CS.cur + k;
+  } else if(k === '.'){ if(CS.fresh || rec){ CS.cur = '0.'; CS.fresh = false; } else if(!CS.cur.includes('.')) CS.cur += '.'; }
+  else if(['＋','−','×','÷'].includes(k)){
+    if(CS.op && !CS.fresh){ cequal(num()); if(CS.err) return cshow(); }
+    if(CS.acc === null) CS.acc = num();
+    CS.op = k; CS.fresh = true;
+  } else if(k === '='){ if(CS.op) cequal(CS.fresh ? CS.acc : num()); }
+  else if(k === '%'){
+    if(CS.op){ const b = (CS.op === '＋' || CS.op === '−') ? CS.acc * num() / 100 : num() / 100; cequal(b); }
+    else { CS.cur = String(cfix(num() / 100)); CS.fresh = true; }
+  } else if(k === 'C'){ Object.assign(CS, {acc:null, op:null, cur:'0', fresh:true, err:false}); }
+  else if(k === '←'){ if(!CS.fresh && !rec){ CS.cur = CS.cur.length > 1 ? CS.cur.slice(0, -1) : '0'; if(CS.cur === '-') CS.cur = '0'; } }
+  else if(k === 'MC') CS.mem = 0;
+  else if(k === 'MR'){ CS.cur = String(CS.mem); CS.fresh = false; CS.rec = true; }
+  else if(k === 'M＋' || k === 'M−'){
+    if(CS.op && !CS.fresh) cequal(num());
+    const v = (CS.fresh && CS.acc !== null && CS.op) ? CS.acc : num();
+    CS.mem = cfix(CS.mem + (k === 'M＋' ? v : -v)); CS.fresh = true;
+  }
+  cshow(); buzz(5);
+}
+let lastAnsInput = null;
+document.addEventListener('focusin', e => { if(e.target.matches?.('.exin, .jamt, .amt')) lastAnsInput = e.target; });
+function calcInsert(){
+  const el = lastAnsInput;
+  if(!el || !document.contains(el) || el.disabled){ toast('先に解答欄（⌨️ 入力モード）や金額欄をタップしてから押してください'); return; }
+  const v = (CS.fresh && CS.acc !== null && CS.op) ? CS.acc : Number(CS.cur);
+  el.value = Number.isInteger(v) ? v.toLocaleString('ja-JP') : String(v);
+  el.dispatchEvent(new Event('input', {bubbles:true}));
+  toast(`${el.value} を入れました`);
+}
+document.addEventListener('keydown', e => {
+  const b = document.body.classList;
+  if(!b.contains('pad-calc') || !b.contains('pad-on') || !b.contains('padable') || e.target.matches?.('input, select, textarea') || e.metaKey || e.ctrlKey) return;
+  const map = {'+':'＋', '-':'−', '*':'×', '/':'÷', 'Enter':'=', '=':'=', 'Backspace':'←', 'Escape':'C', 'Delete':'C', '%':'%', '.':'.'};
+  const k = /^\d$/.test(e.key) ? e.key : map[e.key];
+  if(k){ e.preventDefault(); calcKey(k); }
+});
+
 /* ---------- 計算メモ（画面の右側／下側に出る手書き用紙） ---------- */
 function setupPad(){
   document.body.insertAdjacentHTML('beforeend', `<aside id="pad" aria-label="計算メモ">
-    <div class="padhead"><b>✏️ 計算メモ</b><div class="seg padtabs"><button class="on" data-act="padtab" data-v="memo">✏️ メモ</button><button data-act="padtab" data-v="ans">📖 解答</button></div>${inkBarHTML('pad')}<button class="tool sidebtn" data-act="padside" aria-label="メモを左右に移動">⇆</button><button class="tool" data-act="pad" aria-label="計算メモを閉じる">✕</button></div>
-    <div class="inkwrap padpaper" id="padInk"></div><div class="padans" id="padAns"></div></aside>`);
+    <div class="padhead"><b>✏️ 計算メモ</b><div class="seg padtabs"><button class="on" data-act="padtab" data-v="memo">✏️<span> メモ</span></button><button data-act="padtab" data-v="calc">🧮<span> 電卓</span></button><button class="tab-ans" data-act="padtab" data-v="ans">📖<span> 解答</span></button></div>${inkBarHTML('pad')}<button class="tool sidebtn" data-act="padside" aria-label="メモを左右に移動">⇆</button><button class="tool" data-act="pad" aria-label="計算メモを閉じる">✕</button></div>
+    <div class="inkwrap padpaper" id="padInk"></div><div class="padans" id="padAns"></div>${calcHTML()}</aside>`);
   INKS.pad = new Ink(document.getElementById('padInk'), {name:'pad', width:2, noScroll:true});
   syncBar('pad');
   document.body.classList.toggle('pad-on', !!S.set.pad);
@@ -2955,6 +3402,7 @@ const ACT = {
   closeModal: () => closeModal(),
   closeCeleb: () => closeCeleb(),
   home: () => {
+    if(cur === 'exsheet' && ex?.mode === 'mock' && !ex.graded){ if(!confirm('模擬試験を中断しますか？（「続きから」で再開できます）')) return; clearTimeout(mockTimer); saveMockState(); go('exams'); toast('途中まで保存しました'); return; }
     if(cur === 'exsheet'){ if(ex && !ex.saved && (INKS.sheet?.strokes.length || ex.graded) && !confirm('一覧に戻りますか？（この問題の書き込みは消えます）')) return; go('exams'); return; }
     if(cur === 'doc'){ go('exams'); return; }
     leaveToHome();
@@ -2991,9 +3439,12 @@ const ACT = {
   chs: b => chooseEx(b),
   exgrade: () => gradeExam(),
   mark: b => markEx(b),
-  markrest: () => { Object.keys(ex.p.ans).forEach(k => { if(ex.mk[k] === undefined) ex.mk[k] = true; }); paintMarks(); updateExScore(); },
+  markrest: () => { Object.keys(ex.akeys).forEach(k => { if(ex.mk[k] === undefined) ex.mk[k] = true; }); paintMarks(); updateExScore(); },
+  msec: b => showSec(+b.dataset.v),
+  mockstart: async () => { const st = await DB.ink('mock:state').catch(() => null); if(st && !confirm('途中の模擬試験があります。破棄して新しく始めますか？')) return; startMock(); },
+  mockresume: () => resumeMock(),
   exsave: () => saveExam(),
-  exagain: () => startExam(ex.p.id),
+  exagain: () => ex.mode === 'mock' ? startMock() : startExam(ex.cfg.id),
   exlist: () => go('exams'),
   finger: () => {
     S.set.finger = !S.set.finger; save();
@@ -3008,6 +3459,8 @@ const ACT = {
   pmark: b => markPage(b),
   pclear: b => clearPage(b),
   padtab: b => setPadTab(b.dataset.v),
+  ck: b => calcKey(b.dataset.k),
+  calcins: () => calcInsert(),
 
   submit: () => grade(false),
   giveup: () => grade(true),
@@ -3065,11 +3518,13 @@ document.addEventListener('change', e => {
 });
 // 本試験形式：数字入力欄は3桁カンマ、Enterで次の欄へ
 document.addEventListener('keydown', e => {
-  if(e.key !== 'Enter' || !e.target.classList?.contains('exin')) return;
-  e.preventDefault(); const all = [...view.querySelectorAll('.exin')], i = all.indexOf(e.target);
+  if(e.key !== 'Enter' || !e.target.matches?.('.exin, .jamt')) return;
+  e.preventDefault(); const all = [...view.querySelectorAll('.msec.on .exin, .msec.on .jamt, .msec:only-of-type .exin')], i = all.indexOf(e.target);
   (all[i+1] || e.target).focus(); if(!all[i+1]) e.target.blur();
 });
-document.addEventListener('focusout', e => { if(e.target.classList?.contains('exin')){ const n = toNum(e.target.value); if(n !== null && Number.isInteger(n) && Math.abs(n) >= 1000) e.target.value = n.toLocaleString('ja-JP'); } });
+document.addEventListener('input', e => { if(e.target.matches?.('.exin, .jamt')) mockDirty(); });
+document.addEventListener('change', e => { if(e.target.matches?.('.jsel')) mockDirty(); });
+document.addEventListener('focusout', e => { if(e.target.matches?.('.exin, .jamt')){ const n = toNum(e.target.value); if(n !== null && Number.isInteger(n) && Math.abs(n) >= 1000) e.target.value = n.toLocaleString('ja-JP'); } });
 // 金額入力：全角数字→半角、3桁カンマ区切り
 document.addEventListener('input', e => {
   if(!e.target.classList.contains('amt')) return;
@@ -3083,9 +3538,12 @@ document.addEventListener('keydown', e => {
   if(e.key==='Enter' && cur==='quiz' && e.target.classList?.contains('amt')){ e.preventDefault(); if(!sess.done) grade(false); }
 });
 
+// iPad でアプリを切り替えたときも、模擬試験の途中経過を保存
+document.addEventListener('visibilitychange', () => { if(document.hidden && cur === 'exsheet' && ex?.mode === 'mock' && !ex.graded){ clearTimeout(mockTimer); saveMockState(); } });
 // スマホの「戻る」操作：出題中ならホームへ戻る（アプリからは抜けない）
 window.addEventListener('popstate', () => {
   closeModal();
+  if(cur === 'exsheet' && ex?.mode === 'mock' && !ex.graded){ clearTimeout(mockTimer); saveMockState(); }
   if(cur === 'exsheet' || cur === 'doc') go('exams');
   else if(PLAY.includes(cur)) leaveToHome();
 });
