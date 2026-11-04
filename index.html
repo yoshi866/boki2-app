@@ -417,6 +417,33 @@ body.padable.pad-on #pad{display:flex}
 .pgno{text-align:center;font-size:12px;color:var(--sub);margin:2px 0 8px}
 .doctitle{max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (min-width:900px){ body.padable:not(.pad-on) #view:has(.exsheet,.docpages){max-width:960px} }
+
+.padtabs{display:none;margin:0;flex:0 0 auto}
+.padtabs button{padding:6px 10px;font-size:13px}
+body.has-ans .padtabs{display:flex}
+body.has-ans .padhead>b{display:none}
+.padans{display:none;flex:1;overflow:auto;padding:10px;background:var(--bg);-webkit-overflow-scrolling:touch}
+.padans img{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:4px}
+body.pad-ans #padInk{display:none}
+body.pad-ans .padans{display:block}
+body.pad-ans #pad .inkbar{display:none}
+body.pad-ans #pad .padhead{justify-content:space-between}
+.ansbtn{white-space:nowrap}
+.docstatus{margin:0 0 6px}
+.pgfoot{display:flex;align-items:center;gap:10px;margin:4px 2px 14px}
+.pgfoot .pgno{margin:0;flex:0 0 auto}
+.pmk{display:flex;gap:6px;flex:1;justify-content:center}
+.pmb{width:46px;height:36px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);font-size:18px;font-weight:800;color:var(--sub);padding:0}
+.pmb.o.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.pmb.s.on{background:var(--warn);border-color:var(--warn);color:#fff}
+.pmb.x.on{background:var(--ng);border-color:var(--ng);color:#fff}
+.pgfoot .link{font-size:12px;flex:0 0 auto}
+.only-ng .pgwrap[data-m="o"]{display:none}
+.onlyng-empty{display:none;margin:20px 0}
+.docpages.only-ng.empty+.onlyng-empty.show{display:block}
+.filtbtn.on{border-color:var(--warn);background:var(--warn-weak);color:var(--warn)}
+.docadd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.docadd .btn{margin:0;text-align:center;font-size:14px;cursor:pointer}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -2274,9 +2301,9 @@ function renderExams(){
     <p class="sub" style="margin:0 0 12px">第2〜5問と同じ形式のオリジナル問題。Apple Pencil で問題用紙の余白に計算を書き、解答欄に直接答えを書いて採点します。</p>
     <div class="card"><h2>🏭 工業簿記（第4問・第5問）</h2>${EXAMS.filter(p=>p.grp==='工業').map(row).join('')}</div>
     <div class="card"><h2>🏢 商業簿記（第2問・第3問）</h2>${EXAMS.filter(p=>p.grp==='商業').map(row).join('')}</div>
-    <div class="card" id="mydocs"><h2>📷 自分の過去問・問題集に書き込む</h2>
-      <p class="sub" style="margin:0 0 10px">本物の過去問は著作権の関係でアプリに入れていません。手持ちの過去問題集・模擬試験の<b>PDFや写真</b>を取り込めば、その上に Apple Pencil で書き込んで解けます（書き込みは自動保存。データはこのiPadの中だけに保存されます）。</p>
-      <label class="btn primary filebtn">＋ PDF・写真を取り込む<input type="file" id="docfile" accept="application/pdf,image/*" multiple hidden></label>
+    <div class="card" id="mydocs"><h2>📷 教科書・過去問の写真に書き込む</h2>
+      <p class="sub" style="margin:0 0 10px">手持ちの教科書・問題集・過去問の<b>問題ページ</b>を写真やPDFで取り込むと、その上に Apple Pencil で書き込んで解けます。<b>解答ページ</b>も取り込んでおくと、「📖 解答」で横に並べて答え合わせ → ページごとに ○△× をつけて、×と△だけ解き直せます。データはこのiPadの中だけに保存されます。</p>
+      <label class="btn primary filebtn">＋ 問題ページを取り込む（写真・PDF）<input type="file" id="docfile" accept="application/pdf,image/*" multiple hidden></label>
       <div id="doclist"><p class="sub" style="margin:10px 0 0">読み込み中…</p></div>
     </div>
     <p class="note">問題はこのアプリのために作成したオリジナルです（市販問題集・過去問の転載ではありません）</p>`;
@@ -2412,19 +2439,8 @@ const DB = {
   putDoc(d){ return this.run('docs', 'readwrite', s => s.put(d)); },
   ink(k){ return this.run('ink', 'readonly', s => s.get(k)); },
   putInk(k, v){ return this.run('ink', 'readwrite', s => s.put(v, k)); },
-  async delDoc(d){ await this.run('docs', 'readwrite', s => s.delete(d.id)); await this.run('ink', 'readwrite', s => { d.pages.forEach((_, i) => s.delete(d.id+':'+i)); }); },
+  async delDoc(d){ await this.run('docs', 'readwrite', s => s.delete(d.id)); await this.run('ink', 'readwrite', s => { d.pages.forEach((_, i) => s.delete(d.id+':'+i)); s.delete(d.id+':marks'); }); },
 };
-async function renderDocList(){
-  const box = document.getElementById('doclist'); if(!box) return;
-  let docs = [];
-  try{ docs = (await DB.docs()).sort((a, b) => (b.opened||b.ts) - (a.opened||a.ts)); }
-  catch(e){ box.innerHTML = '<p class="sub" style="margin:10px 0 0">このブラウザでは保存領域が使えません（プライベートブラウズでは使えません）</p>'; return; }
-  if(!document.getElementById('doclist')) return;
-  box.innerHTML = docs.length ? docs.map(d => `<div class="docrow"><button class="exrow" data-act="docopen" data-id="${d.id}">
-      <span class="exl"><b>📄 ${esc(d.name)}</b><small>${d.pages.length}ページ・${new Date(d.ts).toLocaleDateString('ja-JP')} 取り込み</small></span><span class="exs">›</span></button>
-      <button class="link" data-act="docdel" data-id="${d.id}" aria-label="削除">🗑</button></div>`).join('')
-    : '<p class="sub" style="margin:10px 0 0">まだありません。iPadの「ファイル」アプリのPDFや、カメラで撮った問題用紙を選んでください。</p>';
-}
 function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('load')); document.head.appendChild(s); }); }
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
 async function pdfPages(file, prog){
@@ -2451,52 +2467,121 @@ async function imgPage(file){
   const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85)), w = c.width, h = c.height; c.width = c.height = 0;
   return {blob, w, h};
 }
+const MK = {o:{t:'○', n:'できた'}, s:{t:'△', n:'あやしい'}, x:{t:'×', n:'できなかった'}};
+async function docMarks(id){ try{ return (await DB.ink(id+':marks')) || {}; }catch(e){ return {}; } }
+function markSummary(m, n){
+  const c = {o:0, s:0, x:0}; Object.values(m).forEach(v => { if(v && c[v.v] !== undefined) c[v.v]++; });
+  const done = c.o + c.s + c.x;
+  return done ? `<span class="r-good">○${c.o}</span> <span class="r-mid">△${c.s}</span> <span class="r-bad">×${c.x}</span>${done < n ? `・未${n-done}` : ''}` : '未着手';
+}
+async function renderDocList(){
+  const box = document.getElementById('doclist'); if(!box) return;
+  let docs = [];
+  try{ docs = (await DB.docs()).sort((a, b) => (b.opened||b.ts) - (a.opened||a.ts)); }
+  catch(e){ box.innerHTML = '<p class="sub" style="margin:10px 0 0">このブラウザでは保存領域が使えません（プライベートブラウズでは使えません）</p>'; return; }
+  const marks = await Promise.all(docs.map(d => docMarks(d.id)));
+  if(!document.getElementById('doclist')) return;
+  box.innerHTML = docs.length ? docs.map((d, i) => `<div class="docrow"><button class="exrow" data-act="docopen" data-id="${d.id}">
+      <span class="exl"><b>📄 ${esc(d.name)}</b><small>問題${d.pages.length}ページ・${d.ans && d.ans.length ? `解答${d.ans.length}ページ` : '解答なし'}・${markSummary(marks[i], d.pages.length)}</small></span><span class="exs">›</span></button>
+      <button class="link" data-act="docdel" data-id="${d.id}" aria-label="削除">🗑</button></div>`).join('')
+    : '<p class="sub" style="margin:10px 0 0">まだありません。iPadの「ファイル」アプリのPDFや、カメラで撮った教科書・問題集のページを選んでください。</p>';
+}
+async function filesToPages(files, prog){
+  const pages = [];
+  for(const f of files){
+    if(f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) pages.push(...await pdfPages(f, prog));
+    else { prog(`画像を読み込み中… ${pages.length+1}枚目`); pages.push(await imgPage(f)); }
+  }
+  return pages;
+}
+function importError(e){
+  console.warn(e);
+  toast(String(e && e.message) === 'load' ? 'PDFの読み込みにはインターネット接続が必要です' : '取り込めませんでした（容量不足・未対応の形式の可能性）');
+}
 async function importDocs(files){
   if(!files.length) return;
   const box = document.getElementById('doclist'), prog = t => { if(box) box.innerHTML = `<p class="sub" style="margin:10px 0 0">⏳ ${t}</p>`; };
   try{
-    const pages = [];
-    for(const f of files){
-      if(f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) pages.push(...await pdfPages(f, prog));
-      else { prog(`画像を読み込み中… ${pages.length+1}枚目`); pages.push(await imgPage(f)); }
-    }
+    const pages = await filesToPages(files, prog);
     const base = files[0].name.replace(/\.[^.]+$/, '');
     const name = /^(IMG|image|photo)[_-]?\d*/i.test(base) ? `取り込んだ問題 ${new Date().toLocaleDateString('ja-JP')}` : base + (files.length > 1 ? ` ほか${files.length-1}件` : '');
-    const d = {id:'d'+Date.now(), name, pages, ts:Date.now()};
+    const d = {id:'d'+Date.now(), name, pages, ans:[], ts:Date.now()};
     await DB.putDoc(d);
-    toast(`${pages.length}ページ取り込みました`);
+    toast(`${pages.length}ページ取り込みました。解答は「📖 解答を追加」から`);
     openDoc(d.id);
-  }catch(e){
-    console.warn(e);
-    toast(String(e && e.message) === 'load' ? 'PDFの読み込みにはインターネット接続が必要です' : '取り込めませんでした（容量不足・未対応の形式の可能性）');
-    renderDocList();
-  }
+  }catch(e){ importError(e); renderDocList(); }
+}
+// 取り込み済みの問題に、問題ページ（pages）や解答ページ（ans）を追加する
+async function addToDoc(kind, files){
+  if(!files.length || !docv) return;
+  const id = docv.id, st = document.getElementById('docstatus');
+  try{
+    const add = await filesToPages(files, t => { if(st) st.textContent = '⏳ ' + t; });
+    const d = await DB.doc(id); d[kind] = (d[kind] || []).concat(add); await DB.putDoc(d);
+    toast(kind === 'ans' ? `解答を${add.length}ページ追加しました` : `問題を${add.length}ページ追加しました`);
+    await openDoc(id, kind === 'ans' ? {answers:true} : {scrollEnd:true});
+  }catch(e){ importError(e); if(st) st.textContent = ''; }
 }
 let docv = null;
 function closeDoc(){
   if(!docv) return;
+  Object.values(docv.pending).forEach(f => f());   // 保存待ちの書き込みをすぐ保存
   docv.io?.disconnect(); INKS.doc?.destroy(); delete INKS.doc;
-  docv.urls.forEach(u => URL.revokeObjectURL(u)); docv = null;
+  [...docv.urls, ...docv.ansUrls].forEach(u => URL.revokeObjectURL(u));
+  document.getElementById('padAns').innerHTML = '';
+  document.body.classList.remove('has-ans', 'pad-ans');
+  docv = null;
 }
-async function openDoc(id){
+function setPadTab(v){
+  document.body.classList.toggle('pad-ans', v === 'ans');
+  document.querySelectorAll('#pad .padtabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+}
+function showAnswers(){
+  if(!docv) return;
+  if(!docv.ansUrls.length){ document.getElementById('ansfile')?.click(); return; }
+  S.set.padEx = true; save();
+  document.body.classList.add('pad-on');
+  document.querySelectorAll('.padbtn').forEach(x => x.classList.add('on'));
+  setPadTab('ans');
+}
+async function openDoc(id, opt = {}){
   const d = await DB.doc(id); if(!d){ toast('見つかりませんでした'); return; }
+  const marks = await docMarks(id);
   closeDoc();
   d.opened = Date.now(); DB.putDoc(d).catch(() => {});
   go('doc');
-  const urls = d.pages.map(pg => URL.createObjectURL(pg.blob));
-  docv = {id, urls, timers:{}};
+  const ans = d.ans || [], n = d.pages.length;
+  const urls = d.pages.map(pg => URL.createObjectURL(pg.blob)), ansUrls = ans.map(pg => URL.createObjectURL(pg.blob));
+  docv = {id, urls, ansUrls, marks, timers:{}, pending:{}, filter:false};
+  const accept = 'application/pdf,image/*';
   view.innerHTML = `
     <div class="qhead exhead"><div class="qtop"><button class="homebtn" data-act="home">← 一覧</button>
-      <div class="qtop-r"><span class="prog doctitle">${esc(d.name)}</span>${padBtnHTML()}</div></div>
-      <div class="extools">${inkBarHTML('doc')}<button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋ 指で書く</button></div></div>
-    <div class="docpages">${d.pages.map((pg, i) => `<div class="pgwrap"><div class="inkwrap pg" data-i="${i}" style="aspect-ratio:${pg.w}/${pg.h}"><img src="${urls[i]}" alt="${i+1}ページ" draggable="false"></div><p class="pgno">${i+1} / ${d.pages.length}</p></div>`).join('')}</div>
-    <p class="note">書き込みは自動で保存されます</p>`;
+      <div class="qtop-r"><span class="prog doctitle">${esc(d.name)}</span><button class="homebtn ansbtn" data-act="docans">📖 ${ans.length ? '解答' : '解答を追加'}</button>${padBtnHTML()}</div></div>
+      <div class="extools">${inkBarHTML('doc')}<button class="tool filtbtn" data-act="docfilter" aria-label="○以外のページだけ表示">×△だけ</button><button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋ 指で書く</button></div></div>
+    <p class="sub docstatus" id="docstatus"></p>
+    <div class="docpages">${d.pages.map((pg, i) => { const m = marks[i] && marks[i].v || '';
+      return `<div class="pgwrap" data-i="${i}" data-m="${m}"><div class="inkwrap pg" data-i="${i}" style="aspect-ratio:${pg.w}/${pg.h}"><img src="${urls[i]}" alt="${i+1}ページ" draggable="false"></div>
+      <div class="pgfoot"><span class="pgno">${i+1} / ${n}</span>
+        <span class="pmk">${['o','s','x'].map(v => `<button class="pmb ${v} ${m===v?'on':''}" data-act="pmark" data-i="${i}" data-v="${v}" aria-label="${MK[v].n}">${MK[v].t}</button>`).join('')}</span>
+        <button class="link" data-act="pclear" data-i="${i}">🧹 書き込みを消す</button></div></div>`; }).join('')}</div>
+    <p class="sub center onlyng-empty">×・△のページはありません 🎉</p>
+    <div class="docadd">
+      <label class="btn">＋ 問題ページを追加<input type="file" id="addpages" accept="${accept}" multiple hidden></label>
+      <label class="btn">＋ 解答ページを追加<input type="file" id="ansfile" accept="${accept}" multiple hidden></label>
+    </div>
+    <p class="note">書き込みと○△×は自動で保存されます</p>`;
+  // 解答パネル（計算メモと同じ場所に「📖 解答」タブとして出す）
+  document.body.classList.toggle('has-ans', ans.length > 0);
+  document.getElementById('padAns').innerHTML = ans.map((pg, i) =>
+    `<img src="${ansUrls[i]}" alt="解答${i+1}ページ" style="aspect-ratio:${pg.w}/${pg.h}"><p class="pgno">解答 ${i+1} / ${ans.length}</p>`).join('');
+  setPadTab('memo');
   const g = new InkGroup('doc'); INKS.doc = g;
   const wraps = [...view.querySelectorAll('.pg')];
   wraps.forEach((w, i) => {
+    const dv = docv, save = () => { clearTimeout(dv.timers[i]); delete dv.pending[i]; return DB.putInk(id+':'+i, k.strokes).catch(() => toast('書き込みを保存できませんでした')); };
     const k = new Ink(w, {name:'doc', norm:true, scroll:true, paper:true, width:2.8, tool:g.tool,
       onDown: () => { g.cur = i; }, onPush: () => g.pushed(i),
-      onChange: () => { clearTimeout(docv?.timers[i]); if(docv) docv.timers[i] = setTimeout(() => DB.putInk(id+':'+i, k.strokes).catch(() => toast('書き込みを保存できませんでした')), 400); }});
+      onChange: () => { if(docv !== dv) return; clearTimeout(dv.timers[i]); dv.pending[i] = save; dv.timers[i] = setTimeout(save, 400); }});
     k.sleep(); g.add(i, k);
     DB.ink(id+':'+i).then(st => { if(st && st.length){ k.strokes = st; k.redraw(); } }).catch(() => {});
   });
@@ -2504,6 +2589,37 @@ async function openDoc(id){
   docv.io = new IntersectionObserver(es => es.forEach(e => { const k = g.pages[+e.target.dataset.i]; if(!k) return; e.isIntersecting ? k.wake() : (k.cur || k.sleep()); }), {rootMargin:'1200px 0px'});
   wraps.forEach(w => docv.io.observe(w));
   syncBar('doc');
+  if(opt.answers) showAnswers();
+  if(opt.scrollEnd) setTimeout(() => view.querySelector('.docadd')?.scrollIntoView({block:'end'}), 50);
+}
+function markPage(b){
+  if(!docv) return;
+  const i = +b.dataset.i, v = b.dataset.v, m = docv.marks;
+  m[i] = m[i] && m[i].v === v ? undefined : {v, ts:Date.now()};
+  if(!m[i]) delete m[i];
+  DB.putInk(docv.id+':marks', m).catch(() => toast('保存できませんでした'));
+  const wrap = view.querySelector(`.pgwrap[data-i="${i}"]`);
+  wrap.dataset.m = m[i] ? v : '';
+  wrap.querySelectorAll('.pmb').forEach(x => x.classList.toggle('on', m[i] && x.dataset.v === v));
+  buzz(8);
+  if(docv.filter && v === 'o' && m[i]) toast('○のページを隠しました');
+  updateFilterEmpty();
+}
+function updateFilterEmpty(){ view.querySelector('.docpages')?.classList.toggle('empty', !view.querySelector('.pgwrap:not([data-m="o"])')); }
+function toggleDocFilter(){
+  if(!docv) return;
+  docv.filter = !docv.filter;
+  view.querySelector('.docpages').classList.toggle('only-ng', docv.filter);
+  view.querySelector('.filtbtn').classList.toggle('on', docv.filter);
+  view.querySelector('.onlyng-empty').classList.toggle('show', docv.filter);
+  updateFilterEmpty();
+  if(docv.filter){ const n = view.querySelectorAll('.pgwrap:not([data-m="o"])').length; toast(`○以外の${n}ページを表示（解き直し用）`); window.scrollTo({top:0}); }
+}
+function clearPage(b){
+  const g = INKS.doc, i = +b.dataset.i, k = g?.pages[i];
+  if(!k || !k.strokes.length){ toast('このページに書き込みはありません'); return; }
+  g.cur = i; k.clear();
+  toast('書き込みを消しました（↶で戻せます）');
 }
 async function delDoc(id){
   const d = await DB.doc(id); if(!d) return;
@@ -2803,8 +2919,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => Ob
 /* ---------- 計算メモ（画面の右側／下側に出る手書き用紙） ---------- */
 function setupPad(){
   document.body.insertAdjacentHTML('beforeend', `<aside id="pad" aria-label="計算メモ">
-    <div class="padhead"><b>✏️ 計算メモ</b>${inkBarHTML('pad')}<button class="tool sidebtn" data-act="padside" aria-label="メモを左右に移動">⇆</button><button class="tool" data-act="pad" aria-label="計算メモを閉じる">✕</button></div>
-    <div class="inkwrap padpaper" id="padInk"></div></aside>`);
+    <div class="padhead"><b>✏️ 計算メモ</b><div class="seg padtabs"><button class="on" data-act="padtab" data-v="memo">✏️ メモ</button><button data-act="padtab" data-v="ans">📖 解答</button></div>${inkBarHTML('pad')}<button class="tool sidebtn" data-act="padside" aria-label="メモを左右に移動">⇆</button><button class="tool" data-act="pad" aria-label="計算メモを閉じる">✕</button></div>
+    <div class="inkwrap padpaper" id="padInk"></div><div class="padans" id="padAns"></div></aside>`);
   INKS.pad = new Ink(document.getElementById('padInk'), {name:'pad', width:2, noScroll:true});
   syncBar('pad');
   document.body.classList.toggle('pad-on', !!S.set.pad);
@@ -2887,6 +3003,11 @@ const ACT = {
   },
   docopen: b => openDoc(b.dataset.id),
   docdel: b => delDoc(b.dataset.id),
+  docans: () => showAnswers(),
+  docfilter: () => toggleDocFilter(),
+  pmark: b => markPage(b),
+  pclear: b => clearPage(b),
+  padtab: b => setPadTab(b.dataset.v),
 
   submit: () => grade(false),
   giveup: () => grade(true),
@@ -2937,7 +3058,11 @@ document.addEventListener('click', e => {
   ACT[b.dataset.act]?.(b);
 });
 // 過去問・問題集の取り込み
-document.addEventListener('change', e => { if(e.target.id === 'docfile'){ const f = [...e.target.files]; e.target.value = ''; importDocs(f); } });
+document.addEventListener('change', e => {
+  const id = e.target.id; if(!['docfile','ansfile','addpages'].includes(id)) return;
+  const f = [...e.target.files]; e.target.value = '';
+  if(id === 'docfile') importDocs(f); else addToDoc(id === 'ansfile' ? 'ans' : 'pages', f);
+});
 // 本試験形式：数字入力欄は3桁カンマ、Enterで次の欄へ
 document.addEventListener('keydown', e => {
   if(e.key !== 'Enter' || !e.target.classList?.contains('exin')) return;
