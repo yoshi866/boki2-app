@@ -7,8 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="簿記2級">
-<meta name="description" content="日商簿記2級の仕訳問題をスマホで練習できるアプリ">
-<title>簿記2級 仕訳トレーニング</title>
+<meta name="description" content="日商簿記2級の仕訳・本試験形式の問題を、iPad＋Apple Pencil やスマホで練習できるアプリ">
+<title>簿記2級 トレーニング</title>
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230f766e'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3E簿%3C/text%3E%3C/svg%3E">
 <style>
 :root{
@@ -527,6 +529,52 @@ body.pad-ans #pad .padhead{justify-content:space-between}
 .prow .meter i{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--sub);opacity:.5}
 .prow .pp{flex:0 0 54px;text-align:right;font-size:13px}
 .pnote{margin:0 0 0 128px;font-size:11px;color:var(--sub)}
+
+/* ---------- iPad 横向き：2列レイアウト ---------- */
+@media (min-width:900px){
+  #view.v-home,#view.v-stats,#view.v-exams{max-width:1060px}
+  .hgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto 1fr;gap:0 18px;align-items:start}
+  .hgrid>.hA{grid-column:1;grid-row:1}
+  .hgrid>.hB{grid-column:2;grid-row:1 / span 2}
+  .hgrid>.hC{grid-column:1;grid-row:2}
+  #view.v-settings{max-width:720px}
+}
+/* ---------- 解答欄の見た目 ---------- */
+.tb td:has(>.bk){text-align:right;white-space:nowrap}
+.taccount td:nth-child(odd){white-space:nowrap;width:6.5em}
+.ca{height:24px;width:0;min-width:100%;gap:3px}
+.mkb{width:26px;height:24px;flex-shrink:0}
+.ca em{flex-shrink:0}
+.bx{width:10em}
+.exrow{transition:background .1s;border-radius:8px}
+.exrow:active{background:var(--bg)}
+.extools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.extools::-webkit-scrollbar{display:none}
+.extools .inkbar{flex:1 0 auto;flex-wrap:nowrap}
+.extools>*{flex-shrink:0}
+/* メモの上の段：選んでいるタブだけ文字を出して、はみ出さないように */
+.padtabs button:not(.on) span{display:none}
+.padhead .tool{min-width:36px;padding:0 6px}
+.padhead .inkbar{min-width:0}
+@media (max-width:520px){
+  .paper{padding:12px 10px}
+  .tb{font-size:12px}
+  .tb th,.tb td{padding:4px 5px}
+  .bx{width:6em;height:42px}
+  .bk.s .bx{width:4.4em}
+  .ca{justify-content:flex-start;flex-wrap:wrap;align-content:flex-start;height:48px;gap:2px 4px}
+  .ca em{flex:0 0 100%;margin:0;line-height:18px}
+  .mkb{width:30px;height:24px}
+  .taccount td:nth-child(odd){width:auto}
+  .extools span.lb{display:none}
+  .extools .inkbar [data-op=blue],.extools .inkbar [data-op=redo]{display:none}
+  .exmode button{padding:7px 9px}
+  .exin{font-size:15px;padding:0 5px 0 14px}
+  .jsel,.jamt{font-size:13px;padding:0 3px;height:38px}
+  .mq{padding:8px}
+  .prow .pn{flex-basis:96px}
+  .pnote{margin-left:106px}
+}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -1833,7 +1881,7 @@ function defaults(){
           set:{amount:true, scope:'all', cats:[], count:10, exam:'', goal:10,
                pad: IS_WIDE, padEx: false,        // 計算メモを開いておく（仕訳／本試験形式）
                padLeft: false,                    // 計算メモを左側に出す（左利き用）
-               exInput: 'hand',                   // 本試験形式の解答欄：手書き or キーボード
+               exInput: IS_WIDE || (matchMedia('(min-width: 700px)').matches && navigator.maxTouchPoints > 1) ? 'hand' : 'key',                   // 本試験形式の解答欄：手書き or キーボード
                finger:false, penSeen:false}};     // 指でも書く／Apple Pencilを使ったことがある
 }
 function load(){
@@ -1999,7 +2047,7 @@ const padKey = () => ['exsheet','doc'].includes(cur) ? 'padEx' : 'pad';
 function go(v){
   if(cur === 'doc' && v !== 'doc') closeDoc();
   if(cur === 'exsheet' && v !== 'exsheet'){ INKS.sheet?.destroy(); delete INKS.sheet; }
-  cur = v;
+  cur = v; view.className = 'v-' + v;
   clearInterval(oxTimer); clearInterval(exTimer);
   // スマホの「戻る」操作でアプリから抜けないよう、出題中は履歴を1つ積む
   if(PLAY.includes(v)){ if(location.hash !== '#play') history.pushState(null, '', '#play'); }
@@ -2053,7 +2101,7 @@ function renderHome(){
   const catChips = ['商業','工業'].map(gr => `<div class="grp">${gr}簿記</div><div class="chips">${
     CATS.filter(c=>c.grp===gr).map(c=>`<button class="chip ${s.cats.includes(c.id)?'on':''}" data-act="cat" data-id="${c.id}">${esc(c.name)}</button>`).join('')}</div>`).join('');
   view.innerHTML = `
-    <div class="hello"><div><p class="sub">${g}</p><h1>簿記2級 仕訳トレーニング</h1><p class="sub">${esc(msg)}</p></div></div>
+    <div class="hello"><div><p class="sub">${g}</p><h1>簿記2級 トレーニング</h1><p class="sub">${esc(msg)}</p></div></div>
     ${S.resume && S.resume.i < S.resume.ids.length ? `
     <div class="card resume">
       <div class="t"><b>▶ 続きから</b><span class="sub">${MODE_LABEL[S.resume.mode]||''} ・ ${S.resume.i+1}/${S.resume.ids.length}問目から</span></div>
@@ -2063,13 +2111,15 @@ function renderHome(){
     ${S.seenIntro ? '' : `
     <div class="card intro">
       <h2>👋 はじめまして！</h2>
+      <p style="margin:0 0 6px;font-size:14px">簿記2級の合格に向けて、3つの練習ができます。</p>
       <ol>
-        <li>「サクッと5問」を押す</li>
-        <li>勘定科目を<b>タップ</b>して、借方・貸方に入れる</li>
-        <li>答え合わせ → 解説と動画で復習</li>
+        <li><b>仕訳</b>：「サクッと5問」。勘定科目をタップして答える（第1問・第4問の対策）</li>
+        <li><b>本試験形式</b>：計算問題を、問題用紙に手書きしながら解く。90分の模擬試験も</li>
+        <li><b>教科書・過去問</b>：手持ちの問題を写真で取り込んで書き込む</li>
       </ol>
-      <div class="actions"><button class="btn ghost" data-act="basics">仕訳のきほん</button><button class="btn primary" data-act="introOk">はじめる</button></div>
+      <div class="actions"><button class="btn ghost" data-act="basics">仕訳のきほん</button><button class="btn primary" data-act="introOk">まずは仕訳を5問</button></div>
     </div>`}
+    <div class="hgrid"><div class="hA">
     <div class="card lvcard" data-act="go" data-v="stats" role="button">
       <div class="lvbadge"><small>Lv.</small><b>${lv.lv}</b></div>
       <div class="lvbody"><div class="lvtitle">${esc(lv.title)}</div>
@@ -2088,6 +2138,7 @@ function renderHome(){
         ${weekHTML()}
       </div>
     </div>
+    </div><div class="hB">
     <button class="btn primary bigbtn" data-act="smart"><span class="ic">▶</span><span><b>サクッと5問</b><small>苦手・未学習・復習どきの問題からおすすめ</small></span></button>
     <button class="btn exbig" data-act="go" data-v="exams"><span class="ic">📝</span><span><b>本試験形式で解く</b><small>⏱ 90分の模擬試験・第2〜5問の形式・教科書や過去問の写真にも書き込める</small></span></button>
     <div class="quick">
@@ -2096,6 +2147,7 @@ function renderHome(){
       <button data-act="review" ${wr?'':'disabled'}>${wr?`<span class="dot">${wr}</span>`:''}<span class="ic">🔁</span><b>まちがい復習</b><small>${wr?'正解するとリストから消える':'いまは0問'}</small></button>
       <button data-act="basics"><span class="ic">📖</span><b>仕訳のきほん</b><small>借方・貸方の決め方</small></button>
     </div>
+    </div><div class="hC">
     <details class="card">
       <summary>📚 じっくり出題（範囲・問題数を選ぶ）</summary>
       <p class="label">出題範囲</p>
@@ -2109,6 +2161,7 @@ function renderHome(){
       </div>
       <button class="btn primary" data-act="start" ${poolN?'':'disabled'}>スタート（${poolN? (s.count? Math.min(s.count,poolN) : poolN)+'問' : '分野を選んでください'}）</button>
     </details>
+    </div></div>
     <p class="note">学習記録はこの端末のブラウザ内に保存されます</p>`;
   if(sessionStorage.getItem('openDetails')){ view.querySelector('details').open = true; sessionStorage.removeItem('openDetails'); }
 }
@@ -2564,8 +2617,8 @@ function runExam(cfg, restore){
       <div class="qtop-r"><span class="timer" id="extime"></span><span class="prog">${mock ? `制限${MOCK_MIN}分・100点` : `目安${EXMAP[cfg.id].min}分`}</span>${padBtnHTML()}</div></div>
       ${mock ? `<div class="seg mtabs">${secs.map((sc, si) => `<button class="${si===0?'on':''}" data-act="msec" data-v="${si}">${sc.n}</button>`).join('')}</div>` : ''}
       <div class="extools">${inkBarHTML('sheet')}
-        <div class="seg exmode">${[['hand','✍️ 手書き'],['key','⌨️ 入力']].map(([k,l])=>`<button class="${S.set.exInput===k?'on':''}" data-act="exinput" data-v="${k}">${l}</button>`).join('')}</div>
-        <button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋ 指で書く</button></div></div>
+        <div class="seg exmode">${[['hand','✍️',' 手書き'],['key','⌨️',' 入力']].map(([k,i,l])=>`<button class="${S.set.exInput===k?'on':''}" data-act="exinput" data-v="${k}" aria-label="${l.trim()}">${i}<span class="lb">${l}</span></button>`).join('')}</div>
+        <button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋<span class="lb"> 指で書く</span></button></div></div>
     ${secs.map(secHTML).join('')}
     <div id="exres"></div>
     <div class="actions sticky" id="exact"></div>`;
@@ -2577,7 +2630,7 @@ function runExam(cfg, restore){
   if(restore) restoreMock(restore);
   ex.sec = 0; exActions();
   tickEx(); exTimer = setInterval(tickEx, 1000);
-  if(!S.seenExTip){ S.seenExTip = true; save(); toast('Apple Pencil で書く・指でスクロール'); }
+  if(!S.seenExTip && IS_WIDE_NOW()){ S.seenExTip = true; save(); toast('Apple Pencil で書く・指でスクロール'); }
 }
 function secPts(sc){ return sc._js.length*J_PT + sc._parts.reduce((a, pt) => a + (pt.full || exTotal(pt.p)), 0); }
 function tickEx(){
@@ -2749,26 +2802,29 @@ function renderExams(){
   const rec = S.exr || {};
   const row = p => { const r = rec[p.id], tot = exTotal(p);
     return `<button class="exrow" data-act="exopen" data-id="${p.id}">
-      <span class="exl"><span class="tag ${p.grp==='商業'?'g1':'g2'}">${p.part}</span><b>${esc(p.title)}</b><small>目安${p.min}分・${tot}点満点${r ? `・${r.n}回` : ''}</small></span>
+      <span class="exl"><b>${esc(p.title)}</b><small>目安${p.min}分・${tot}点満点${r ? `・${r.n}回` : ''}</small></span>
       <span class="exs ${r ? 'r-'+rateClass(Math.round(r.best/tot*100)) : 'r-none'}">${r ? `${r.best}<small>/${tot}</small>` : '未'}</span></button>`; };
   const ms = (S.mock || []).slice(-5).reverse();
   const grp = (g, parts) => parts.map(pt => { const ps = EXAMS.filter(p => p.grp === g && p.part.startsWith(pt)); return ps.length ? `<p class="grp" style="margin-top:8px">${pt}</p>${ps.map(row).join('')}` : ''; }).join('');
   view.innerHTML = `
     <h1>本試験形式で解く</h1>
     <p class="sub" style="margin:0 0 12px">第1〜5問と同じ形式のオリジナル問題。Apple Pencil で問題用紙の余白に計算を書き、解答欄に直接答えを書いて採点します。</p>
+    <div class="hgrid"><div class="hA">
     <div class="card mockcard"><h2>⏱ 模擬試験（90分・100点）</h2>
       <p class="sub" style="margin:0 0 10px">第1問〜第5問を本試験と同じ配点で出題。70点以上で合格ライン。途中でアプリを閉じても続きから再開できます。</p>
       <div id="mockresume"></div>
       <button class="btn primary" data-act="mockstart">模擬試験をはじめる</button>
       ${ms.length ? `<p class="label" style="margin:12px 0 4px">最近の結果</p><ul class="rlist">${ms.map(m => `<li><span class="mk ${m.score>=70?'o':'x'}">${m.score>=70?'○':'×'}</span><span style="flex:1"><b>${m.score}点</b>　<span class="sub">${m.s.map((x, i) => `第${i+1}問 ${x}`).join('・')}</span></span><span class="sub">${new Date(m.ts).toLocaleDateString('ja-JP')}</span></li>`).join('')}</ul>` : ''}
     </div>
+    </div><div class="hB">
     <div class="card"><h2>🏢 商業簿記（第2問・第3問）</h2>${grp('商業', ['第2問','第3問'])}</div>
     <div class="card"><h2>🏭 工業簿記（第4問・第5問）</h2>${grp('工業', ['第4問','第5問'])}</div>
+    </div><div class="hC">
     <div class="card" id="mydocs"><h2>📷 教科書・過去問の写真に書き込む</h2>
       <p class="sub" style="margin:0 0 10px">教科書・問題集・過去問の<b>問題・解答用紙・解答</b>の写真（PDFも可）を1問ずつセットで取り込めます。解答用紙に Apple Pencil で書き、問題は横に表示、「📖 解答」で答え合わせ → 1問ごとに ○△× をつけて、×と△だけ解き直せます。データはこのiPadの中だけに保存されます。</p>
       <button class="btn primary" data-act="wiznew0">＋ 問題を取り込む（写真・PDF）</button>
       <div id="doclist"><p class="sub" style="margin:10px 0 0">読み込み中…</p></div>
-    </div>
+    </div></div></div>
     <p class="note">問題はこのアプリのために作成したオリジナルです（市販問題集・過去問の転載ではありません）</p>`;
   renderDocList();
   DB.ink('mock:state').then(st => { const box = document.getElementById('mockresume'); if(st && box){ const m = Math.floor((Date.now()-st.t0)/60000);
@@ -2993,7 +3049,7 @@ async function openDoc(id, opt = {}){
         <select id="docqsel" aria-label="問題を選ぶ"></select>
         <button class="tool" data-act="docq" data-v="1" aria-label="次の問題">▶</button>
         <button class="tool filtbtn" data-act="docfilter" aria-label="○以外だけ">×△だけ</button></div>
-      <div class="extools">${inkBarHTML('doc')}<button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋ 指で書く</button></div></div>
+      <div class="extools">${inkBarHTML('doc')}<button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋<span class="lb"> 指で書く</span></button></div></div>
     <div id="docq"></div>
     <div class="docadd">
       <button class="btn" data-act="wizadd">＋ この問題にページを追加</button>
@@ -3157,7 +3213,7 @@ function renderStats(){
   const weak = CATS.map(c=>({c, s:catStats(c.id)})).filter(o=>o.s.n>=3 && o.s.rate<80).sort((a,b)=>a.s.rate-b.s.rate).slice(0,3);
   view.innerHTML = `
     <h1>成績</h1>
-    <div style="margin-top:10px">${predictHTML()}</div>
+    <div class="hgrid" style="margin-top:10px"><div class="hA">${predictHTML()}
     <div class="card lvcard">
       <div class="lvbadge"><small>Lv.</small><b>${lv.lv}</b></div>
       <div class="lvbody"><div class="lvtitle">${esc(lv.title)}</div>
@@ -3173,7 +3229,7 @@ function renderStats(){
     <div class="card"><h2>🏅 バッジ <span class="sub" style="font-weight:400">${Object.keys(S.badges).length}/${BADGES.length}</span></h2>
       <div class="badges">${BADGES.map(b=>`<div class="badge ${S.badges[b.id]?'on':''}" data-act="badge" data-id="${b.id}"><i>${b.i}</i>${esc(b.n)}</div>`).join('')}</div></div>
     ${weak.length ? `<div class="card"><h2>苦手な分野</h2>${weak.map(o=>`<div class="cat-f" style="padding:4px 0;font-size:14px"><span>${esc(o.c.name)}　<b class="r-${rateClass(o.s.rate)}">${o.s.rate}%</b></span><button class="mini" data-act="catstart" data-id="${o.c.id}">解く</button></div>`).join('')}</div>` : ''}
-    ${groups}
+    </div><div class="hB">${groups}</div></div>
     <p class="note">⭐＝3回連続正解でマスター。正答率＝正解した回数÷回答した回数</p>`;
 }
 
@@ -3201,21 +3257,27 @@ function renderSettings(){
     </div>
     <div class="card">
       <h2>使い方</h2>
+      <p class="label">仕訳（第1問・第4問）</p>
       <ol class="help">
-        <li><b>サクッと5問</b>：苦手・未学習・復習どきの問題を自動で選びます</li>
+        <li><b>サクッと5問</b>：苦手・未学習・復習どきの問題を自動で選びます。勘定科目を<b>タップ</b>すると選択中の欄に入ります</li>
         <li><b>○×スピード</b>：表示された仕訳が正しいか1タップで答えます</li>
-        <li>仕訳は、勘定科目を<b>タップ</b>すると選択中の欄に入ります</li>
-        <li><b>⏱ 模擬試験</b>：90分・100点で第1〜5問を通しで解き、70点の合格ラインを判定。途中で閉じても再開できます</li>
-        <li><b>🎯 予想得点</b>：成績タブで、いま受けたら何点か・どの大問を伸ばすべきかがわかります</li>
-        <li><b>🧮 電卓</b>：計算メモの「電卓」タブ。結果は「→ 解答欄へ」で入力欄に入れられます</li>
-        <li><b>📝 本試験形式</b>：第2〜5問と同じ形式の問題。Apple Pencil で問題用紙に計算を書き込み、解答欄に直接答えを書いて採点します</li>
-        <li><b>📷 自分の過去問</b>：手持ちの過去問題集・模試のPDFや写真を取り込んで、その上に書き込んで解けます</li>
-        <li><b>✏️ メモ</b>：出題中の右上ボタンで計算用紙を開閉。iPadを横向きにすると問題の横に並びます（左利きなら「⇆」か設定で左側に）（問題が変わると新しいページに。↶で戻せます）</li>
         <li>3回連続で正解すると ⭐マスター。まちがえた問題は「まちがい復習」へ</li>
-        <li>正解でXPがたまってレベルアップ。バッジも集めよう</li>
+      </ol>
+      <p class="label" style="margin-top:12px">本試験形式（第2〜5問）</p>
+      <ol class="help">
+        <li><b>📝 問題を解く</b>：Apple Pencil で問題用紙に計算を書き込み、解答欄に直接答えを書いて採点します。「⌨️ 入力」にすると数字を入力して自動採点</li>
+        <li><b>⏱ 模擬試験</b>：90分・100点で第1〜5問を通しで解き、70点の合格ラインを判定。途中で閉じても再開できます</li>
+        <li><b>📷 教科書・過去問</b>：問題・解答用紙・解答の写真を1問ずつセットで取り込み、書き込んで解けます</li>
+      </ol>
+      <p class="label" style="margin-top:12px">便利な機能</p>
+      <ol class="help">
+        <li><b>✏️ メモ</b>：出題中の右上ボタンで計算用紙を開閉。iPadを横向きにすると問題の横に並びます（左利きなら「⇆」で左側に）</li>
+        <li><b>🧮 電卓</b>：メモの「電卓」タブ。結果は「→ 解答欄へ」で入力欄に入れられます</li>
+        <li><b>🎯 予想得点</b>：成績タブで、いま受けたら何点か・どの大問を伸ばすべきかがわかります</li>
+        <li>一度開けば、<b>インターネットがなくても</b>使えます（PDFの取り込みと動画を除く）</li>
       </ol>
       <button class="btn" style="margin-top:12px" data-act="basics">📖 仕訳のきほんを見る</button>
-      <p class="sub" style="margin:10px 0 0">スマホのブラウザで「ホーム画面に追加」すると、アプリのように起動できます。</p>
+      <p class="sub" style="margin:10px 0 0">Safari の共有ボタン →「ホーム画面に追加」で、アプリのように起動できます。記録も消えにくくなります。</p>
     </div>
     <div class="card">
       <h2>学習記録のバックアップ</h2>
@@ -3228,7 +3290,7 @@ function renderSettings(){
     <div class="card">
       <button class="btn danger" data-act="reset">学習記録をすべて消去</button>
     </div>
-    <p class="note">簿記2級 仕訳トレーニング・全${QS.length}問</p>`;
+    <p class="note">簿記2級 トレーニング・仕訳${QS.length}問／本試験形式${EXAMS.length}題</p>`;
   document.getElementById('optFinger').onchange = e => { S.set.finger = e.target.checked; save(); Object.values(INKS).forEach(k => k.syncTouch()); toast(S.set.finger?'指でも書けます':'Apple Pencil だけで書きます'); };
   document.getElementById('optAmt').onchange = e => { S.set.amount = e.target.checked; save(); toast(S.set.amount?'金額も採点します':'勘定科目のみで採点します'); };
   document.getElementById('optExam').onchange = e => { S.set.exam = e.target.value; save(); toast('試験日を保存しました'); };
@@ -3693,6 +3755,11 @@ window.addEventListener('popstate', () => {
   else if(PLAY.includes(cur)) leaveToHome();
 });
 if(location.hash === '#play') history.replaceState(null, '', location.pathname + location.search);
+
+// 学習記録・取り込んだ写真が消えにくいよう、保存領域の保護をお願いする
+try{ navigator.storage?.persist?.(); }catch(e){}
+// オフラインでも開けるようにする（電車の中など）
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 
 checkBadges();
 celebQ.length = 0; // 起動時は演出しない
