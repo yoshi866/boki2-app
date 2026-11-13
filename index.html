@@ -451,6 +451,12 @@ body.pad-prob .zbtn,body.pad-ans .zbtn{display:inline-flex}
 .bgrid img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid var(--line);display:block}
 .bgrid figcaption{font-size:11px;line-height:1.3;color:var(--sub)}
 .bgrid figcaption b{color:var(--text)}
+.bgrid.rev{max-height:none;grid-template-columns:repeat(auto-fill,minmax(78px,1fr))}
+.bgrid.rev figure{cursor:pointer;border-radius:8px;padding:3px;border:2px solid var(--accent);background:var(--accent-weak)}
+.bgrid.rev figure.odd{border-color:var(--violet);background:var(--violet-weak)}
+.bgrid.rev figure.cont{border-style:dashed}
+.bgrid.rev figure.cont img{opacity:.75}
+.bgrid.rev img{aspect-ratio:3/4;object-fit:cover}
 .padhead>b{display:none}
 @media (max-width:520px){ .padtabs span{display:none} }
 @media (max-width:440px){ #pad .inkbar [data-op=redo], #pad .inkbar [data-op=blue], #pad .inkbar .sp{display:none} .padtabs button{padding:6px 7px} }
@@ -2186,7 +2192,7 @@ function showBasics(){
     <button class="btn primary" data-act="closeModal">とじる</button>`);
 }
 function openModal(html){ const m = document.getElementById('modal'); m.innerHTML = `<div class="sheet">${html}</div>`; m.classList.add('show'); }
-function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+function closeModal(){ document.getElementById('modal').classList.remove('show'); rev = null; }
 
 /* =========================================================
    仕訳を入力する出題
@@ -2871,10 +2877,16 @@ async function pdfPages(file, prog){
     const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
     const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
     await page.render({canvasContext:ctx, viewport:vp}).promise;
-    out.push({blob: await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85)), w:c.width, h:c.height});
+    out.push({blob: await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85)), w:c.width, h:c.height, thumb:thumbOf(c)});
     c.width = c.height = 0;
   }
   return out;
+}
+// 確認画面用の小さな画像（大きな写真を何十枚も並べると iPhone のメモリが足りなくなるため）
+function thumbOf(c){
+  const t = document.createElement('canvas'), k = 150 / c.width; t.width = 150; t.height = Math.max(1, Math.round(c.height*k));
+  t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+  const u = t.toDataURL('image/jpeg', 0.6); t.width = t.height = 0; return u;
 }
 async function imgPage(file){
   const url = URL.createObjectURL(file), img = new Image();
@@ -2882,8 +2894,8 @@ async function imgPage(file){
   const k = Math.min(1, 1600 / img.naturalWidth), c = document.createElement('canvas');
   c.width = Math.round(img.naturalWidth*k); c.height = Math.round(img.naturalHeight*k);
   const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
-  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85)), w = c.width, h = c.height; c.width = c.height = 0;
-  return {blob, w, h};
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85)), w = c.width, h = c.height, thumb = thumbOf(c); c.width = c.height = 0;
+  return {blob, w, h, thumb};
 }
 const MK = {o:{t:'○', n:'できた'}, s:{t:'△', n:'あやしい'}, x:{t:'×', n:'できなかった'}};
 const ROLE = {prob:'問題', sheet:'解答用紙', ans:'解答'};
@@ -2944,16 +2956,17 @@ function openWizard(docId, q){
   const pick = (r, req) => `<label class="pickrow"><span class="pr-l"><b>${r==='prob'?'①':r==='sheet'?'②':'③'} ${ROLE[r]}</b><small>${req ? '必須' : 'なければ空のままでOK'}</small></span>
     <span class="pr-c" id="wc-${r}">未選択</span><span class="mini">選ぶ</span><input type="file" class="wizfile" data-role="${r}" accept="application/pdf,image/*" multiple hidden></label>`;
   const addTo = q != null;
-  openModal(`<h2>📷 ${addTo ? `問${q+1}にページを追加` : docId ? '次の問題を追加' : '問題を取り込む'}</h2>
+  openModal(`<h2>📷 ${addTo ? `問${q+1}にページを追加` : docId ? '問題を追加で取り込む' : '問題を取り込む'}</h2>
     ${!docId ? `<input class="wizname" id="wizname" placeholder="名前（例：テキスト第3章、予想問題 第1回）" autocomplete="off">` : ''}
-    <div class="wseg seg"><button class="on" data-act="wizmode" data-v="one">1問ずつ</button>${addTo ? '' : '<button data-act="wizmode" data-v="bulk">まとめて取り込む</button>'}</div>
+    ${addTo ? '' : '<div class="wseg seg"><button class="on" data-act="wizmode" data-v="one">種類ごとに選ぶ<br><small>おすすめ</small></button><button data-act="wizmode" data-v="bulk">順番に並んだ写真<br><small>問題→解答用紙→解答…</small></button></div>'}
     <div id="wiz-one">
-      <p class="sub" style="margin:0 0 8px">1問ぶんの写真を、種類ごとに選んでください（それぞれ複数枚OK）。</p>
+      <p class="sub" style="margin:0 0 8px">${addTo ? 'この問題に足す写真を、種類ごとに選んでください。' : '<b>問題・解答用紙・解答を、それぞれまとめて</b>選んでください（何問ぶんでも一度に。PDFもOK）。次の画面で自動的に問題ごとに分けます。'}</p>
       ${pick('prob', !addTo)}${pick('sheet')}${pick('ans')}
-      <button class="btn primary" data-act="wizgo" style="margin-top:12px">${addTo ? '追加する' : '取り込む'}</button>
+      <button class="btn primary" data-act="wizgo" style="margin-top:12px">${addTo ? '追加する' : '次へ（問題ごとに分ける）'}</button>
+      ${addTo ? '' : '<p class="sub" style="margin:8px 0 0;font-size:12px">💡 iPhone の「ファイル」アプリ →「…」→「書類をスキャン」で撮ると、自動で傾きを直したPDFになり、選ぶのも1ファイルで済みます。</p>'}
     </div>
     <div id="wiz-bulk" hidden>
-      <p class="sub" style="margin:0 0 8px">写真を<b>「問題 → 解答用紙 → 解答」の順にくり返し</b>選ぶと、自動で1問ずつに分けます。写真アプリで撮った順にタップして選んでください。</p>
+      <p class="sub" style="margin:0 0 8px">写真が<b>「問題 → 解答用紙 → 解答」の順にくり返し</b>並んでいるとき用。選んだ順に、自動で1問ずつに分けます。</p>
       <div class="seg" style="margin-bottom:8px"><button class="on" data-act="wizgroup" data-v="3">3枚で1問<br><small>問題・解答用紙・解答</small></button><button data-act="wizgroup" data-v="2">2枚で1問<br><small>問題・解答</small></button></div>
       <label class="btn filebtn">写真をまとめて選ぶ<input type="file" id="bulkfile" accept="image/*" multiple hidden></label>
       <div id="bulkprev"></div>
@@ -2975,6 +2988,63 @@ function bulkPreview(){
   box.innerHTML = `<p class="label" style="margin:10px 0 6px">${n}問に分けます${rest ? `（最後の問${wiz.base+n}は${rest}枚だけ）` : ''}。順番が合っているか確認してください。</p>
     <div class="bgrid">${f.map((x, i) => `<figure><img src="${wiz.urls[i]}" alt=""><figcaption>問${wiz.base+Math.floor(i/g)+1}<br><b>${ROLE[roles[i%g]]}</b></figcaption></figure>`).join('')}</div>
     <button class="btn primary" data-act="wizbulk" style="margin-top:10px">この分け方で取り込む</button>`;
+}
+
+/* ---------- 種類ごとにまとめて選んだ写真を、問題ごとに分ける確認画面 ----------
+   最初は「1枚＝1問」。写真をタップすると「前の写真の続き（同じ問題）」に切り替わる */
+let rev = null;
+async function wizKind(){
+  const w = wiz, f = w.files;
+  if(!f.prob.length){ toast('① 問題の写真（またはPDF）を選んでください'); return; }
+  const st = t => { const b = document.querySelector('#modal .sheet h2'); if(b) b.textContent = '⏳ ' + t; };
+  const name = (document.getElementById('wizname')?.value || '').trim();
+  document.querySelectorAll('#modal button, #modal label').forEach(el => el.style.pointerEvents = 'none');
+  try{
+    const roles = {};
+    for(const r of ['prob','sheet','ans']) roles[r] = f[r].length ? await filesToPages(f[r], t => st(`${ROLE[r]}：${t}`)) : [];
+    rev = {docId:w.docId, name, roles, base:w.base};
+    wiz = null;
+    // どの種類も1枚以下なら、分けるまでもなく1問
+    if(Object.values(roles).every(a => a.length <= 1)) return revSave();
+    revRender();
+  }catch(e){ importError(e); rev = null; closeModal(); }
+}
+function revCount(r){ return rev.roles[r].filter((p, i) => i === 0 || !p.cont).length; }
+function revRender(){
+  if(!rev) return;
+  const used = ['prob','sheet','ans'].filter(r => rev.roles[r].length), counts = used.map(revCount), n = Math.max(...counts), same = counts.every(c => c === n);
+  const sec = r => { let q = rev.base;
+    return `<p class="label" style="margin:12px 0 6px">${ROLE[r]}：${rev.roles[r].length}枚 → <b class="${same ? '' : 'r-bad'}">${revCount(r)}問</b></p>
+    <div class="bgrid rev">${rev.roles[r].map((p, i) => { const c = i > 0 && p.cont; if(!c) q++;
+      return `<figure class="${c ? 'cont' : ''} ${q % 2 ? 'odd' : ''}" data-act="revtog" data-r="${r}" data-i="${i}"><img src="${p.thumb}" alt=""><figcaption>${c ? `↳ 問${q}の続き` : `<b>問${q}</b>`}</figcaption></figure>`; }).join('')}</div>`; };
+  const box = document.querySelector('#modal .sheet'), top = box.scrollTop;
+  box.innerHTML = `<h2>📷 問題ごとに分ける</h2>
+    <p class="sub" style="margin:0 0 8px">選んだ順に、1枚ずつ1問に分けました。<b>1問が2ページ以上あるときは、2ページ目以降の写真をタップ</b>して「続き」にしてください（もう一度タップで戻ります）。</p>
+    <div class="actions"><button class="btn" data-act="revall" data-v="0">1枚＝1問</button><button class="btn" data-act="revall" data-v="1">全部で1問にまとめる</button></div>
+    ${used.map(sec).join('')}
+    ${same ? '' : `<p class="trap" style="margin-top:12px"><span>⚠️ 問題数がそろっていません</span>${used.map((r, i) => `${ROLE[r]} ${counts[i]}問`).join(' ／ ')}。同じ問題の写真を「続き」にして、数をそろえてください（そろえなくても保存はできます）。</p>`}
+    <button class="btn primary" data-act="revsave" style="margin-top:14px">この分け方で保存（${n}問）</button>
+    <button class="btn ghost" data-act="revcancel" style="margin-top:8px">やめる</button>`;
+  box.scrollTop = top;
+}
+async function revSave(){
+  const r0 = rev; if(!r0) return;
+  try{
+    let d = r0.docId ? toV2(await DB.doc(r0.docId)) : null;
+    if(!d) d = {id:'d'+Date.now(), name:r0.name || `取り込んだ問題 ${new Date().toLocaleDateString('ja-JP')}`, v:2, pages:[], ans:[], ts:Date.now()};
+    const q0 = docItems(d).length; let n = 0;
+    for(const r of ['prob','sheet','ans']){
+      let q = q0 - 1;
+      r0.roles[r].forEach((p, i) => { if(i === 0 || !p.cont) q++;
+        const pg = {blob:p.blob, w:p.w, h:p.h, q};
+        if(r === 'ans') d.ans.push(pg); else { pg.role = r; d.pages.push(pg); } });
+      n = Math.max(n, q - q0 + 1);
+    }
+    await DB.putDoc(d);
+    rev = null; closeModal();
+    toast(`${n}問取り込みました`);
+    openDoc(d.id, {q:q0});
+  }catch(e){ importError(e); }
 }
 async function wizImport(groups){
   // groups: [{prob:[File], sheet:[File], ans:[File]}]
@@ -3725,7 +3795,11 @@ const ACT = {
   wizadd: () => docv && openWizard(docv.id, docv.qi),
   wizmode: b => { document.getElementById('wiz-one').hidden = b.dataset.v !== 'one'; document.getElementById('wiz-bulk').hidden = b.dataset.v !== 'bulk'; b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); },
   wizgroup: b => { wiz.group = +b.dataset.v; b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); bulkPreview(); },
-  wizgo: () => { if(!wiz) return; const f = wiz.files; if(wiz.q == null && !f.prob.length){ toast('① 問題の写真を選んでください'); return; } if(!f.prob.length && !f.sheet.length && !f.ans.length){ toast('写真を選んでください'); return; } wizImport([f]); },
+  wizgo: () => { if(!wiz) return; const f = wiz.files; if(wiz.q == null) return wizKind(); if(!f.prob.length && !f.sheet.length && !f.ans.length){ toast('写真を選んでください'); return; } wizImport([f]); },
+  revtog: b => { const i = +b.dataset.i; if(!rev || i === 0) return; const p = rev.roles[b.dataset.r][i]; p.cont = !p.cont; revRender(); buzz(6); },
+  revall: b => { if(!rev) return; const v = b.dataset.v === '1'; Object.values(rev.roles).forEach(a => a.forEach((p, i) => p.cont = v && i > 0)); revRender(); },
+  revsave: () => revSave(),
+  revcancel: () => { if(confirm('取り込みをやめますか？（選んだ写真は取り込まれません）')){ rev = null; closeModal(); } },
   wizbulk: () => { if(!wiz || !wiz.bulk.length) return; const g = wiz.group, roles = BULK_ROLES[g], groups = [];
     wiz.bulk.forEach((file, i) => { const gi = Math.floor(i/g); (groups[gi] = groups[gi] || {prob:[], sheet:[], ans:[]})[roles[i%g]].push(file); }); wizImport(groups); },
   padtab: b => setPadTab(b.dataset.v),
@@ -3774,7 +3848,7 @@ const ACT = {
   },
 };
 document.addEventListener('click', e => {
-  if(e.target.id === 'modal'){ closeModal(); return; }
+  if(e.target.id === 'modal'){ if(!rev) closeModal(); return; }
   if(e.target.id === 'celebrate'){ closeCeleb(); return; }
   const b = e.target.closest('[data-act]');
   if(!b || b.disabled) return;
