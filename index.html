@@ -594,6 +594,23 @@ body.pad-ans #pad .padhead{justify-content:space-between}
 .stsum{font-weight:800;font-size:14px;margin-left:auto;white-space:nowrap}
 .qnav.single .stsum{margin-left:0;flex:1}
 .stsum .sub{font-weight:500}
+
+/* ---------- 問題番号のしおり ---------- */
+.anspg{position:relative}
+.bmt{position:absolute;left:0;z-index:4;min-width:28px;height:20px;padding:0 6px 0 4px;border:none;border-radius:0 10px 10px 0;background:var(--violet);color:#fff;font-size:11px;font-weight:800;line-height:20px;text-align:center;pointer-events:none;opacity:.8}
+.bmt.u{background:#d97706}
+.bmlayer{display:none;position:absolute;inset:0;z-index:3;cursor:crosshair;background:rgba(124,58,237,.07)}
+body.bm-edit .bmlayer{display:block}
+body.bm-edit .bmt{pointer-events:auto;opacity:1;height:30px;line-height:30px;font-size:15px;min-width:44px;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.bmnav{display:none;align-items:center;gap:6px;flex:1 1 200px;min-width:0}
+.bmnav.has{display:flex}
+.bmnav select{flex:1;min-width:0;height:38px;font:inherit;font-size:15px;font-weight:800;border:1.5px solid var(--violet);border-radius:10px;background:var(--card);color:var(--text);padding:0 8px}
+.bmbtn.on{border-color:var(--violet);background:var(--violet-weak)}
+.bmbar{display:none;align-items:center;gap:8px;margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--violet-weak)}
+body.bm-edit .bmbar{display:flex}
+body.bm-edit .extools{display:none}
+.pg.note{background:#fff linear-gradient(#dbe3ea 1px, transparent 1px) 0 0/100% 32px}
+#notebox:not(:empty){margin-bottom:14px}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -2841,7 +2858,7 @@ function renderExams(){
     <div class="card"><h2>🏭 工業簿記（第4問・第5問）</h2>${grp('工業', ['第4問','第5問'])}</div>
     </div><div class="hC">
     <div class="card" id="mydocs"><h2>📷 教科書・過去問の写真に書き込む</h2>
-      <p class="sub" style="margin:0 0 10px">教科書・問題集・過去問の<b>問題・解答用紙・解答</b>の写真（PDFも可）を、章ごとにまとめて取り込めます。解答用紙に Apple Pencil で書き、問題は横に表示、「📖 解答」で答え合わせ。問題番号の横に <b>○△× のスタンプ</b>を押して採点し、「次の×△」で解き直す場所へ飛べます。データはこの端末の中だけに保存されます。</p>
+      <p class="sub" style="margin:0 0 10px">教科書・問題集・過去問の<b>問題・解答用紙・解答</b>の写真（PDFも可）を、章ごとにまとめて取り込めます。解答用紙に Apple Pencil で書き、問題は横に表示、「📖 解答」で答え合わせ。写真の<b>問題番号を自動で読み取る</b>ので、番号を選ぶだけで問題・解答用紙・解答がその場所に移動します。<b>○△× のスタンプ</b>で採点し、「次の×△」で解き直す場所へ飛べます。データはこの端末の中だけに保存されます。</p>
       <button class="btn primary" data-act="wiznew0">＋ 問題を取り込む（写真・PDF）</button>
       <label class="btn filebtn" style="margin-top:8px">📥 共有ファイルから取り込む（.boki2）<input type="file" id="setfile" hidden></label>
       <p class="sub" style="margin:8px 0 0;font-size:12px">iPhone で撮って取り込んだ問題は、一覧の 📤 から AirDrop などで iPad に送れます（書き込みと○△×も一緒に送られます）。</p>
@@ -2873,7 +2890,7 @@ const DB = {
   putDoc(d){ return this.run('docs', 'readwrite', s => s.put(d)); },
   ink(k){ return this.run('ink', 'readonly', s => s.get(k)); },
   putInk(k, v){ return this.run('ink', 'readwrite', s => s.put(v, k)); },
-  async delDoc(d){ await this.run('docs', 'readwrite', s => s.delete(d.id)); await this.run('ink', 'readwrite', s => { d.pages.forEach((_, i) => s.delete(d.id+':'+i)); s.delete(d.id+':marks'); }); },
+  async delDoc(d){ await this.run('docs', 'readwrite', s => s.delete(d.id)); await this.run('ink', 'readwrite', s => { s.delete(IDBKeyRange.bound(d.id+':', d.id+':\uffff')); }); },
 };
 function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('load')); document.head.appendChild(s); }); }
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
@@ -2982,7 +2999,7 @@ function openWizard(docId, q){
       ${pick('prob', !addTo)}${pick('sheet')}${pick('ans')}
       ${addTo ? '' : `<p class="label" style="margin:12px 0 6px">分け方</p>
       <div class="seg" style="margin:0"><button class="on" data-act="wizsplit" data-v="set">まるごと1セット<br><small>1ページに何問もある本（おすすめ）</small></button><button data-act="wizsplit" data-v="page">1ページ＝1問に分ける<br><small>1問ずつ別のページの本</small></button></div>
-      <p class="sub" style="margin:6px 0 0;font-size:12px">まるごと1セットなら、分ける作業はいりません。解くときに、問題番号の横へ ○△× のスタンプを押して採点します。</p>`}
+      <p class="sub" style="margin:6px 0 0;font-size:12px">まるごと1セットなら、分ける作業はいりません。写真の「問題 5」「解答 5」のような番号を自動で読み取り、<b>問題番号を選ぶと 問題・解答用紙・解答 がその場所へ移動</b>します。</p>`}
       <button class="btn primary" data-act="wizgo" style="margin-top:12px">${addTo ? '追加する' : '取り込む'}</button>
       ${addTo ? '' : '<p class="sub" style="margin:8px 0 0;font-size:12px">💡 iPhone の「ファイル」アプリ →「…」→「書類をスキャン」で撮ると、自動で傾きを直したPDFになり、選ぶのも1ファイルで済みます。</p>'}
     </div>
@@ -3062,8 +3079,14 @@ async function revSave(){
       n = Math.max(n, q - q0 + 1);
     }
     await DB.putDoc(d);
+    let found = 0;
+    try{
+      const hd = document.querySelector('#modal .sheet h2');
+      const r = await detectDoc(d, await DB.ink(d.id+':bm').catch(() => null), t => { if(hd) hd.textContent = '⏳ ' + t; });
+      await DB.putInk(d.id+':bm', r.bm); found = r.found;
+    }catch(e){ console.warn(e); }
     rev = null; closeModal();
-    toast(n === 1 ? '取り込みました。解いたら ○△× スタンプで採点しよう' : `${n}問取り込みました`);
+    toast(found ? `取り込みました。問題番号を${found}か所見つけました` : n === 1 ? '取り込みました。解いたら ○△× スタンプで採点しよう' : `${n}問取り込みました`);
     openDoc(d.id, {q:q0});
   }catch(e){ importError(e); }
 }
@@ -3108,7 +3131,7 @@ function closeDoc(){
   if(!docv) return;
   clearDocQ();
   [...docv.urls, ...docv.ansUrls].forEach(u => URL.revokeObjectURL(u));
-  document.body.classList.remove('has-ans', 'has-prob');
+  document.body.classList.remove('has-ans', 'has-prob', 'bm-edit');
   if(['ans','prob'].some(t => document.body.classList.contains('pad-'+t))) setPadTab('memo');
   docv = null;
 }
@@ -3118,6 +3141,7 @@ function setPadTab(v){
   els.forEach(el => { if(el.offsetParent) el.dataset.st = el.scrollTop; });
   ['ans','calc','prob'].forEach(t => document.body.classList.toggle('pad-'+t, v === t));
   els.forEach(el => { if(el.offsetParent && el.dataset.st) el.scrollTop = +el.dataset.st; });
+  bmApplyPend();
   document.querySelectorAll('#pad .padtabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
 }
 function openPad(tab){
@@ -3143,7 +3167,8 @@ async function openDoc(id, opt = {}){
   closeDoc();
   d.opened = Date.now(); DB.putDoc(d).catch(() => {});
   go('doc');
-  docv = {id, d, items:docItems(d), marks, timers:{}, pending:{}, cache:{}, filter:false, zoom:1,
+  const bm = (await DB.ink(id+':bm').catch(() => null)) || {p:{}, a:{}}; bm.p = bm.p || {}; bm.a = bm.a || {};
+  docv = {id, d, items:docItems(d), marks, bm, timers:{}, pending:{}, cache:{}, filter:false, zoom:1,
           urls:d.pages.map(p => URL.createObjectURL(p.blob)), ansUrls:(d.ans || []).map(p => URL.createObjectURL(p.blob))};
   view.innerHTML = `
     <div class="qhead exhead"><div class="qtop"><button class="homebtn" data-act="home">← 一覧</button>
@@ -3152,7 +3177,10 @@ async function openDoc(id, opt = {}){
         <select id="docqsel" aria-label="問題を選ぶ"></select>
         <button class="tool" data-act="docq" data-v="1" aria-label="次の問題">▶</button>
         <button class="tool filtbtn" data-act="docfilter" aria-label="○以外だけ">×△だけ</button></span>
+        <span class="bmnav" id="bmnav"><button class="tool" data-act="bmstep" data-v="-1" aria-label="前の問題へ">◀</button><select id="bmsel" aria-label="問題番号を選ぶ"></select><button class="tool" data-act="bmstep" data-v="1" aria-label="次の問題へ">▶</button></span>
+        <button class="tool bmbtn" data-act="bmtoggle" aria-label="問題番号のしおりを編集">🔖<span class="lb"> 番号</span></button>
         <span class="stsum" id="stsum"></span><button class="tool" data-act="docbad" aria-label="次の×△のスタンプへ">次の×△ ↓</button></div>
+      <div class="bmbar"><span class="sub" style="flex:1">見出しをタップで追加／番号をタップで修正・削除</span><button class="mini" data-act="bmauto">🔍 写真から自動で探す</button><button class="mini" data-act="bmtoggle" style="background:var(--accent);color:var(--accent-text)">完了</button></div>
       <div class="extools">${inkBarHTML('doc', true)}<button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋<span class="lb"> 指で書く</span></button></div></div>
     <div id="docq"></div>
     <div class="docadd">
@@ -3207,7 +3235,8 @@ function showDocQ(qi){
   const main = hasSheet ? it.sheet : it.prob;
   document.getElementById('docqsel').innerHTML = docv.items.map((_, i) => `<option value="${i}" ${i===qi?'selected':''}>${qLabel(i)} / ${n}問</option>`).join('');
   const ab = view.querySelector('.ansbtn'); ab.textContent = it.ans.length ? '📖 解答' : '📖 解答を追加';
-  document.getElementById('docq').innerHTML = `
+  docv.noteIdx = null;
+  document.getElementById('docq').innerHTML = `<div id="notebox"></div>
     ${hasSheet ? `<div class="qbar"><span class="tag">解答用紙</span><button class="mini" data-act="docprob">📄 問題を横に表示</button></div>` : (it.prob.length ? '' : '<p class="sub">この問題には写真がありません。「＋ この問題にページを追加」から追加してください。</p>')}
     <div class="docpages">${main.map(i => pageHTML(i, hasSheet ? '解答用紙' : '問題')).join('')}</div>
     <div class="pgfoot"><span class="pgno">問${qi+1} / ${n}</span>
@@ -3219,7 +3248,7 @@ function showDocQ(qi){
   document.body.classList.toggle('has-ans', it.ans.length > 0);
   document.getElementById('padProb').innerHTML = hasSheet ? `<div class="zwrap" style="width:${docv.zoom*100}%">${it.prob.map(i => pageHTML(i, '問題')).join('')}</div>` : '';
   document.getElementById('padAns').innerHTML = `<div class="zwrap" style="width:${docv.zoom*100}%">${it.ans.map((j, k) => { const p = docv.d.ans[j];
-    return `<img src="${docv.ansUrls[j]}" alt="解答${k+1}" loading="lazy" decoding="async" style="aspect-ratio:${p.w}/${p.h}"><p class="pgno">解答 ${k+1} / ${it.ans.length}</p>`; }).join('')}</div>`;
+    return `<div class="anspg" data-j="${j}"><img src="${docv.ansUrls[j]}" alt="解答${k+1}" loading="lazy" decoding="async" style="aspect-ratio:${p.w}/${p.h}"></div><p class="pgno">解答 ${k+1} / ${it.ans.length}</p>`; }).join('')}</div>`;
   const g = new InkGroup('doc'); INKS.doc = g;
   const io = root => new IntersectionObserver(es => es.forEach(e => { const k = INKS.doc === g && g.pages[+e.target.dataset.i]; if(!k) return; e.isIntersecting ? k.wake() : (k.cur || k.sleep()); }), {root, rootMargin:'1000px 0px'});
   docv.io = [io(null), io(document.getElementById('padProb'))];
@@ -3234,6 +3263,9 @@ function showDocQ(qi){
   const b = document.body.classList;
   if(b.contains('pad-ans') || b.contains('pad-prob') || hasSheet) hasSheet ? openPadIfWide('prob') : setPadTab('memo');
   window.scrollTo({top:0});
+  renderBm();
+  const nums = bmNumbers();
+  if(nums.length) goBm(nums.includes(docv.bmCur) ? docv.bmCur : nums[0], false);
 }
 function openPadIfWide(tab){
   if(S.set.padEx || IS_WIDE_NOW()) openPad(tab); else setPadTab(tab);
@@ -3273,14 +3305,245 @@ function clearPage(){
   toast('書き込みを消しました。×・△の問題を解き直そう');
 }
 
+/* =========================================================
+   問題番号のしおり
+   教科書の「問題 5」「解答 5」の黒い四角の番号を写真から自動で見つけて、
+   「問題5」を選ぶと 問題・解答用紙・解答 が同時にその位置へ移動するようにする。
+   bm = {p:{ページ番号:[{y, n, u}]}, a:{解答ページ番号:[…]}}  y…ページの高さに対する位置(0〜1)／n…問題番号／u…自信なし
+   ========================================================= */
+function ccBoxes(mask, W, H){   // つながっている画素のかたまり（4方向）ごとの外接四角
+  const out = [], stack = new Int32Array(W*H);
+  for(let s = 0; s < W*H; s++){
+    if(mask[s] !== 1) continue;
+    let sp = 0, x0 = W, y0 = H, x1 = 0, y1 = 0, n = 0; stack[sp++] = s; mask[s] = 2;
+    while(sp){
+      const p = stack[--sp], x = p % W, y = (p - x) / W; n++;
+      if(x < x0) x0 = x; if(x > x1) x1 = x; if(y < y0) y0 = y; if(y > y1) y1 = y;
+      if(x > 0 && mask[p-1] === 1){ mask[p-1] = 2; stack[sp++] = p-1; }
+      if(x < W-1 && mask[p+1] === 1){ mask[p+1] = 2; stack[sp++] = p+1; }
+      if(y > 0 && mask[p-W] === 1){ mask[p-W] = 2; stack[sp++] = p-W; }
+      if(y < H-1 && mask[p+W] === 1){ mask[p+W] = 2; stack[sp++] = p+W; }
+    }
+    out.push({x0, y0, w:x1-x0+1, h:y1-y0+1, n, s});
+  }
+  return out;
+}
+const GS = 20;
+function normGlyph(src, sx, sy, sw, sh){   // 文字を20×20にそろえる（縦横比は保つ）
+  const c = document.createElement('canvas'); c.width = c.height = GS;
+  const k = GS / Math.max(sw, sh), w = Math.max(1, Math.round(sw*k)), h = Math.max(1, Math.round(sh*k)), x = c.getContext('2d');
+  x.fillStyle = '#000'; x.fillRect(0, 0, GS, GS); x.drawImage(src, sx, sy, sw, sh, (GS-w)>>1, (GS-h)>>1, w, h);
+  const d = x.getImageData(0, 0, GS, GS).data, out = new Float32Array(GS*GS); let n = 0;
+  for(let i = 0; i < GS*GS; i++){ out[i] = d[i*4] / 255; n += out[i]*out[i]; }
+  n = Math.sqrt(n) || 1; for(let i = 0; i < GS*GS; i++) out[i] /= n;
+  return out;
+}
+let DIGIT_TPL = null;
+function digitTemplates(){   // 太字の数字の見本（端末のフォントから作る）
+  if(DIGIT_TPL) return DIGIT_TPL;
+  const fonts = ['bold 64px Helvetica, Arial, sans-serif', 'italic bold 64px Helvetica, Arial, sans-serif', 'bold 64px "Hiragino Sans", "Noto Sans JP", sans-serif'];
+  const c = document.createElement('canvas'); c.width = c.height = 110; const x = c.getContext('2d', {willReadFrequently:true}); DIGIT_TPL = [];
+  for(const f of fonts) for(let dg = 0; dg < 10; dg++){
+    x.fillStyle = '#000'; x.fillRect(0, 0, 110, 110); x.fillStyle = '#fff'; x.font = f; x.fillText(String(dg), 25, 82);
+    const d = x.getImageData(0, 0, 110, 110).data; let x0 = 110, y0 = 110, x1 = 0, y1 = 0;
+    for(let i = 0; i < 110*110; i++) if(d[i*4] > 128){ const px = i % 110, py = (i - px) / 110; if(px < x0) x0 = px; if(px > x1) x1 = px; if(py < y0) y0 = py; if(py > y1) y1 = py; }
+    if(x1 >= x0) DIGIT_TPL.push({d:dg, v:normGlyph(c, x0, y0, x1-x0+1, y1-y0+1)});
+  }
+  return DIGIT_TPL;
+}
+function readNumber(img, bx, k){   // 黒い四角の中の白い数字を読む。読めなければ null
+  const T = 168, sc = T / (bx.w / k), cw = T, ch = Math.round(bx.h / k * sc);
+  const c = document.createElement('canvas'); c.width = cw; c.height = ch; const x = c.getContext('2d', {willReadFrequently:true});
+  x.drawImage(img, bx.x0 / k, bx.y0 / k, bx.w / k, bx.h / k, 0, 0, cw, ch);
+  const d = x.getImageData(0, 0, cw, ch).data, g = new Uint8Array(cw*ch), hist = new Float64Array(256);
+  for(let i = 0; i < cw*ch; i++){ g[i] = (d[i*4] + d[i*4+1] + d[i*4+2]) / 3; hist[g[i]]++; }
+  let sum = 0; for(let i = 0; i < 256; i++) sum += i*hist[i];
+  let sb = 0, wb = 0, best = 0, th = 127;   // 大津の方法で白黒に分ける
+  for(let i = 0; i < 256; i++){ wb += hist[i]; if(!wb || wb === cw*ch) continue; sb += i*hist[i]; const mb = sb/wb, mf = (sum-sb)/(cw*ch-wb), v = wb*(cw*ch-wb)*(mb-mf)*(mb-mf); if(v > best){ best = v; th = i; } }
+  const m = new Uint8Array(cw*ch); for(let i = 0; i < cw*ch; i++) m[i] = g[i] > th ? 1 : 0;
+  const gl = ccBoxes(m, cw, ch).filter(b => b.x0 > 1 && b.y0 > 1 && b.x0 + b.w < cw - 1 && b.y0 + b.h < ch - 1 && b.h >= ch * 0.3).sort((a, b) => a.x0 - b.x0);
+  if(!gl.length || gl.length > 3) return null;
+  const tpl = digitTemplates(), tmp = document.createElement('canvas'), tx = tmp.getContext('2d'), digs = [];
+  for(const b of gl){
+    // この文字の画素だけを取り出す（となりの文字が外接四角に入り込んでも混ざらないように）
+    const lab = new Uint8Array(b.w*b.h), st = [b.s]; const seen = new Set([b.s]);
+    while(st.length){ const p = st.pop(), px = p % cw, py = (p - px) / cw; lab[(py-b.y0)*b.w + (px-b.x0)] = 1;
+      for(const q of [p-1, p+1, p-cw, p+cw]){ if(q < 0 || q >= cw*ch || seen.has(q) || m[q] !== 2) continue; const qx = q % cw; if(Math.abs(qx - px) > 1) continue; seen.add(q); st.push(q); } }
+    tmp.width = b.w; tmp.height = b.h; const id = tx.createImageData(b.w, b.h);
+    for(let i = 0; i < b.w*b.h; i++){ const v = lab[i] ? 255 : 0; id.data[i*4] = id.data[i*4+1] = id.data[i*4+2] = v; id.data[i*4+3] = 255; }
+    tx.putImageData(id, 0, 0);
+    const v = normGlyph(tmp, 0, 0, b.w, b.h), sc = new Float32Array(10);
+    for(const t of tpl){ let dot = 0; for(let i = 0; i < GS*GS; i++) dot += v[i]*t.v[i]; if(dot > sc[t.d]) sc[t.d] = dot; }
+    const rank = [...sc.keys()].sort((a, c) => sc[c] - sc[a]);
+    if(sc[rank[0]] < 0.5) return null;
+    digs.push({d:rank[0], d2:rank[1], gap:sc[rank[0]] - sc[rank[1]]});
+  }
+  const n = parseInt(digs.map(v => v.d).join(''), 10);
+  if(!(n >= 1 && n <= 300)) return null;
+  // いちばん自信のない桁を次点の数字に替えた「第2候補」も返す（前後の番号と合うほうを選ぶため）
+  const weak = digs.reduce((a, v) => v.gap < a.gap ? v : a), alt = weak.gap < 0.1 ? parseInt(digs.map(v => v === weak ? v.d2 : v.d).join(''), 10) : null;
+  return {n, alt};
+}
+async function detectPage(blob){
+  const url = URL.createObjectURL(blob), img = new Image(); img.src = url;
+  try{ await img.decode(); } finally { URL.revokeObjectURL(url); }
+  const W = 800, k = W / img.naturalWidth, H = Math.round(img.naturalHeight * k);
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d', {willReadFrequently:true}); x.drawImage(img, 0, 0, W, H);
+  const d = x.getImageData(0, 0, W, H).data, dark = new Uint8Array(W*H);
+  for(let i = 0, p = 0; i < W*H; i++, p += 4){ const r = d[p], g = d[p+1], b = d[p+2]; if(r + g + b < 255 && Math.max(r, g, b) - Math.min(r, g, b) < 60) dark[i] = 1; }
+  c.width = c.height = 0;
+  // 黒くて四角い、ページ幅の2〜7%くらいの大きさのもの。右端（ページ番号など）は除く
+  return ccBoxes(dark, W, H).filter(b => b.w >= 0.022*W && b.w <= 0.075*W && b.h >= 0.022*W && b.h <= 0.075*W && b.w/b.h >= 0.6 && b.w/b.h <= 1.7 && b.n/(b.w*b.h) >= 0.5 && (b.x0 + b.w/2) < 0.6*W)
+    .sort((a, b) => a.y0 - b.y0).map(b => { const r = readNumber(img, b, k); return {y:Math.max(0, (b.y0 - b.h*0.6) / H), n:r ? r.n : null, alt:r ? r.alt : null, u:!r}; });
+}
+function fixSeq(list, consecutive){   // 読めなかった番号は前後から推測。順番がおかしいものは「？」つきにする
+  list.forEach((m, i) => {
+    const prev = i ? list[i-1].n : null, nx = list.slice(i+1).find(v => v.n != null), next = nx ? nx.n : null;
+    if(prev != null && next === prev + 2 && m.n !== prev + 1){ m.n = prev + 1; m.u = false; }   // 前後が 4 と 6 なら、間は 5 しかない
+    else if(!consecutive && m.n != null && m.alt != null && prev != null && m.n <= prev && m.alt > prev && (next == null || m.alt < next)) m.n = m.alt;   // 解答用紙：順番が合うのは第2候補だけ
+    else if(consecutive && m.n != null && m.alt != null && (prev != null ? m.n !== prev + 1 && m.alt === prev + 1 : next != null && m.n !== next - 1 && m.alt === next - 1)) m.n = m.alt;   // 第2候補なら連番になる
+    else if(m.n == null){ m.n = prev != null ? prev + 1 : next != null ? Math.max(1, next - 1) : 1; m.u = true; }
+    else if(prev != null && m.n <= prev) m.u = true;
+    delete m.alt; if(!m.u) delete m.u;
+  });
+}
+// まだ調べていないページから番号を探して bm に足す
+async function detectDoc(d, bm, prog){
+  bm = bm || {p:{}, a:{}}; bm.p = bm.p || {}; bm.a = bm.a || {};
+  const jobs = [['prob', d.pages.map((p, i) => [p, i]).filter(v => v[0].role !== 'sheet'), bm.p], ['sheet', d.pages.map((p, i) => [p, i]).filter(v => v[0].role === 'sheet'), bm.p], ['ans', (d.ans || []).map((p, i) => [p, i]), bm.a]];
+  const total = jobs.reduce((a, j) => a + j[1].filter(v => !j[2][v[1]]).length, 0); let done = 0, found = 0;
+  for(const [pane, list, store] of jobs){
+    const fresh = [];
+    for(const [pg, i] of list){
+      if(store[i]) continue;
+      prog && prog(`問題番号を探しています… ${++done}/${total}ページ`);
+      try{ store[i] = await detectPage(pg.blob); }catch(e){ store[i] = []; }
+      fresh.push(...store[i]);
+    }
+    fixSeq(fresh, pane !== 'sheet'); found += fresh.length;
+  }
+  return {bm, found};
+}
+
+/* ---------- しおりを使って移動する ---------- */
+const NOTE0 = 100000;   // ノート（解答用紙がない問題用の白紙）の書き込みは「100000＋問題番号」のページとして保存
+function bmPane(pane){   // いま開いているセットの、その種類のしおりを上から順に
+  const it = docv.items[docv.qi], out = [];
+  if(pane === 'ans') it.ans.forEach(j => (docv.bm.a[j] || []).forEach(m => out.push({m, k:'a', i:j})));
+  else it[pane].forEach(i => (docv.bm.p[i] || []).slice().sort((a, b) => a.y - b.y).forEach(m => out.push({m, k:'p', i})));
+  return out;
+}
+const bmFind = (pane, n) => bmPane(pane).find(v => v.m.n === n);
+function bmNumbers(){ return [...new Set(['prob','sheet','ans'].flatMap(p => bmPane(p).map(v => v.m.n)))].sort((a, b) => a - b); }
+function saveBm(){ DB.putInk(docv.id+':bm', docv.bm).catch(() => toast('しおりを保存できませんでした')); }
+function renderBm(){
+  if(!docv) return;
+  document.querySelectorAll('.bmt, .bmlayer').forEach(el => el.remove());
+  const put = (wrap, k, i) => {
+    const list = (k === 'a' ? docv.bm.a : docv.bm.p)[i] || [];
+    wrap.insertAdjacentHTML('beforeend', `<div class="bmlayer" data-act="bmadd" data-k="${k}" data-i="${i}"></div>` +
+      list.map((m, x) => `<button class="bmt ${m.u ? 'u' : ''}" data-act="bmedit" data-k="${k}" data-i="${i}" data-x="${x}" style="top:${(m.y*100).toFixed(2)}%">${m.n}${m.u ? '?' : ''}</button>`).join(''));
+  };
+  document.querySelectorAll('#docq .pg:not(.note), #padProb .pg').forEach(w => put(w, 'p', +w.dataset.i));
+  document.querySelectorAll('#padAns .anspg').forEach(w => put(w, 'a', +w.dataset.j));
+  const nums = bmNumbers(), nav = document.getElementById('bmnav'), sel = document.getElementById('bmsel');
+  if(nav){ nav.classList.toggle('has', nums.length > 0);
+    sel.innerHTML = nums.map(n => `<option value="${n}">問題 ${n}${bmFind('sheet', n) || !docv.items[docv.qi].sheet.length ? '' : '（ノート）'}</option>`).join('');
+    if(docv.bmCur != null && nums.includes(docv.bmCur)) sel.value = docv.bmCur; }
+}
+function bmScroll(pane, n, smooth){
+  const f = bmFind(pane, n); if(!f) return false;
+  const hasSheet = docv.items[docv.qi].sheet.length > 0;
+  const inMain = pane === 'sheet' || (pane === 'prob' && !hasSheet);
+  const box = inMain ? null : document.getElementById(pane === 'ans' ? 'padAns' : 'padProb');
+  const w = (box || view).querySelector(f.k === 'a' ? `.anspg[data-j="${f.i}"]` : `.pg[data-i="${f.i}"]`);
+  if(!w) return false;
+  if(box){ if(!box.offsetParent) return false; const r = w.getBoundingClientRect(), b = box.getBoundingClientRect(); box.scrollTop = r.top - b.top + box.scrollTop + f.m.y*r.height - 6; delete box.dataset.st; }
+  else { const r = w.getBoundingClientRect(), head = (view.querySelector('.exhead')?.offsetHeight || 150) + 8; window.scrollTo({top:Math.max(0, r.top + window.scrollY + f.m.y*r.height - head), behavior:smooth ? 'smooth' : 'instant'}); }
+  return true;
+}
+function bmApplyPend(){
+  if(!docv || !docv.bmPend) return;
+  for(const pane of ['prob','ans']) if(docv.bmPend[pane] != null){ const el = document.getElementById(pane === 'ans' ? 'padAns' : 'padProb'); if(el && el.offsetParent){ bmScroll(pane, docv.bmPend[pane]); docv.bmPend[pane] = null; } }
+}
+function showNote(n){
+  const box = document.getElementById('notebox'), g = INKS.doc; if(!box || !g) return;
+  if(docv.noteIdx != null){ docv.pending[docv.noteIdx]?.(); g.pages[docv.noteIdx]?.destroy(); delete g.pages[docv.noteIdx]; docv.noteIdx = null; }
+  if(n == null){ box.innerHTML = ''; return; }
+  const i = NOTE0 + n;
+  box.innerHTML = `<div class="qbar"><span class="tag warn">ノート</span><span class="sub" style="flex:1">問題${n} は解答用紙がありません。ここに書いて解けます（保存されます）</span></div>
+    <div class="pgwrap"><div class="inkwrap pg note" data-i="${i}" style="aspect-ratio:1000/620"></div></div>`;
+  inkPage(i, box.querySelector('.pg')).wake(); docv.noteIdx = i;
+}
+function goBm(n, smooth = true){
+  if(!docv) return;
+  docv.bmCur = n;
+  const sel = document.getElementById('bmsel'); if(sel) sel.value = n;
+  const hasSheet = docv.items[docv.qi].sheet.length > 0, b = document.body.classList;
+  if(b.contains('pad-ans')) hasSheet ? setPadTab('prob') : setPadTab('memo');   // 次の問題の解答が見えてしまわないように
+  docv.bmPend = {prob:hasSheet ? n : null, ans:n};
+  const onSheet = hasSheet && !!bmFind('sheet', n);
+  showNote(hasSheet && !onSheet ? n : null);
+  if(hasSheet){ if(onSheet) bmScroll('sheet', n, smooth); else window.scrollTo({top:0, behavior:smooth ? 'smooth' : 'instant'}); }
+  else bmScroll('prob', n, smooth);
+  bmApplyPend();
+}
+function bmStep(d){
+  const nums = bmNumbers(); if(!nums.length) return;
+  const i = nums.indexOf(docv.bmCur), j = i < 0 ? 0 : i + d;
+  if(j < 0 || j >= nums.length){ toast(d > 0 ? '最後の問題です' : '最初の問題です'); return; }
+  goBm(nums[j]);
+}
+function bmToggle(on){
+  if(!docv) return;
+  docv.bmEdit = on === undefined ? !docv.bmEdit : on;
+  document.body.classList.toggle('bm-edit', docv.bmEdit);
+  document.querySelectorAll('.bmbtn').forEach(b => b.classList.toggle('on', docv.bmEdit));
+  if(docv.bmEdit) toast('問題の見出しをタップ → 番号を追加。番号をタップ → 修正・削除');
+}
+function bmAdd(b, e){
+  if(!docv || !docv.bmEdit) return;
+  const r = b.getBoundingClientRect(), y = Math.min(0.99, Math.max(0, (e.clientY - r.top) / r.height - 0.01)), k = b.dataset.k, i = +b.dataset.i;
+  const pane = k === 'a' ? 'ans' : (docv.d.pages[i].role === 'sheet' ? 'sheet' : 'prob');
+  const before = bmPane(pane).filter(v => v.i < i || (v.i === i && v.m.y < y)).pop();
+  const v = prompt(`${ROLE[pane]}：ここは問題何番？`, before ? before.m.n + 1 : 1); if(v == null) return;
+  const n = parseInt(toNum(v), 10); if(!(n >= 1)) return;
+  const store = k === 'a' ? docv.bm.a : docv.bm.p; (store[i] = store[i] || []).push({y, n}); store[i].sort((a, c) => a.y - c.y);
+  saveBm(); renderBm();
+}
+function bmEdit(b){
+  if(!docv || !docv.bmEdit) return;
+  const list = (b.dataset.k === 'a' ? docv.bm.a : docv.bm.p)[+b.dataset.i], m = list[+b.dataset.x];
+  const v = prompt('問題番号を直す（空にして OK で削除）', m.n); if(v == null) return;
+  const n = parseInt(toNum(v) ?? '', 10);
+  if(v.trim() === '') list.splice(+b.dataset.x, 1); else if(n >= 1){ m.n = n; delete m.u; } else return;
+  saveBm(); renderBm();
+}
+async function bmAuto(){
+  if(!docv) return;
+  const has = bmNumbers().length > 0;
+  if(has && !confirm('問題番号を写真から探し直しますか？（いまの番号のしおりは置きかえます）')) return;
+  const dv = docv;
+  try{
+    const r = await detectDoc(dv.d, {p:{}, a:{}}, t => toast(t));
+    if(docv !== dv) return;
+    dv.bm = r.bm; saveBm(); renderBm();
+    const nums = bmNumbers();
+    toast(r.found ? `${r.found}か所に番号を付けました。「?」つきは確認してください` : '番号の四角が見つかりませんでした。見出しをタップして手で追加できます');
+    if(nums.length && !dv.bmEdit) goBm(nums[0]);
+  }catch(e){ console.warn(e); toast('番号を探せませんでした'); }
+}
+
 /* ---------- 問題セットをファイルにして、ほかの端末（iPhone → iPad など）に送る ----------
    形式（.boki2）："BOKI2SET" ＋ ヘッダー長（4バイト）＋ ヘッダーJSON ＋ 画像データを順に連結 */
 const SET_MAGIC = 'BOKI2SET';
 async function buildSetFile(id){
   const d = toV2(await DB.doc(id)), marks = await docMarks(id), ink = {};
-  for(let i = 0; i < d.pages.length; i++){ const st = await DB.ink(id+':'+i).catch(() => null); if(st && st.length) ink[i] = st; }
+  const bm = await DB.ink(id+':bm').catch(() => null);
+  const noteIdx = bm ? [...new Set([...Object.values(bm.p || {}), ...Object.values(bm.a || {})].flat().map(m => NOTE0 + m.n))] : [];
+  for(const i of [...d.pages.keys(), ...noteIdx]){ const st = await DB.ink(id+':'+i).catch(() => null); if(st && st.length) ink[i] = st; }
   const meta = pg => ({w:pg.w, h:pg.h, q:pg.q, role:pg.role, size:pg.blob.size, type:pg.blob.type || 'image/jpeg'});
-  const head = new TextEncoder().encode(JSON.stringify({v:1, name:d.name, ts:d.ts, pages:d.pages.map(meta), ans:(d.ans || []).map(meta), marks, ink}));
+  const head = new TextEncoder().encode(JSON.stringify({v:1, name:d.name, ts:d.ts, pages:d.pages.map(meta), ans:(d.ans || []).map(meta), marks, ink, bm}));
   const len = new Uint8Array(4); new DataView(len.buffer).setUint32(0, head.length, true);
   const blob = new Blob([SET_MAGIC, len, head, ...d.pages.map(p => p.blob), ...(d.ans || []).map(p => p.blob)], {type:'application/octet-stream'});
   const fname = d.name.replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 40) + '.boki2';
@@ -3316,7 +3579,8 @@ async function importSetFile(file){
     const ans = []; for(const m of (h.ans || [])){ const pg = await take(m); delete pg.role; ans.push(pg); }
     const id = 'd' + Date.now();
     await DB.putDoc({id, name:String(h.name || '受け取った問題').slice(0, 60), v:2, pages, ans, ts:Date.now()});
-    for(const [i, st] of Object.entries(h.ink || {})) if(Array.isArray(st) && pages[i]) await DB.putInk(id+':'+i, st);
+    for(const [i, st] of Object.entries(h.ink || {})) if(Array.isArray(st) && (pages[i] || +i >= NOTE0)) await DB.putInk(id+':'+i, st);
+    if(h.bm && typeof h.bm === 'object') await DB.putInk(id+':bm', {p:h.bm.p || {}, a:h.bm.a || {}});
     if(h.marks && Object.keys(h.marks).length) await DB.putInk(id+':marks', h.marks);
     toast(`「${h.name}」を取り込みました`);
     openDoc(id);
@@ -3450,7 +3714,7 @@ function renderSettings(){
       <ol class="help">
         <li><b>📝 問題を解く</b>：Apple Pencil で問題用紙に計算を書き込み、解答欄に直接答えを書いて採点します。「⌨️ 入力」にすると数字を入力して自動採点</li>
         <li><b>⏱ 模擬試験</b>：90分・100点で第1〜5問を通しで解き、70点の合格ラインを判定。途中で閉じても再開できます</li>
-        <li><b>📷 教科書・過去問</b>：問題・解答用紙・解答の写真を章ごとにまとめて取り込み、書き込んで解けます。○△×のスタンプで採点し、「次の×△」で解き直し</li>
+        <li><b>📷 教科書・過去問</b>：問題・解答用紙・解答の写真を章ごとにまとめて取り込み、書き込んで解けます。問題番号は写真から自動で読み取り、番号を選ぶと問題・解答用紙・解答がそろって移動します（ずれていたら「🔖 番号」で直せます）。○△×のスタンプで採点し、「次の×△」で解き直し</li>
       </ol>
       <p class="label" style="margin-top:12px">便利な機能</p>
       <ol class="help">
@@ -3489,7 +3753,7 @@ const INKS = {};
 const INK_VARS = {ink:'--text', red:'--ng', blue:'--debit'};
 const PAPER_INK = {ink:'#1f2933', red:'#dc2626', blue:'#1d4ed8'}; // 取り込んだ紙（白地）用
 const fingerOK = () => S.set.finger || !S.set.penSeen;
-const INTERACTIVE = 'button,input,select,textarea,a,label';
+const INTERACTIVE = 'button,input,select,textarea,a,label,.bmlayer';
 function inkColors(){ const cs = getComputedStyle(document.documentElement); return Object.fromEntries(Object.entries(INK_VARS).map(([k, v]) => [k, cs.getPropertyValue(v).trim() || '#000'])); }
 function distSeg(p, a, b){
   const dx = b.x - a.x, dy = b.y - a.y, l = dx*dx + dy*dy;
@@ -3644,8 +3908,8 @@ class InkGroup {
   add(i, ink){ this.pages[i] = ink; }
   pushed(i){ this.order.push(i); this.redoOrder = []; this.cur = i; }
   setTool(t){ this.tool = t; this.pages.forEach(p => p && (p.tool = t)); syncBar(this.name); }
-  undo(){ const i = this.order.pop(); if(i === undefined) return; this.redoOrder.push(i); this.pages[i].undo(); }
-  redo(){ const i = this.redoOrder.pop(); if(i === undefined) return; this.order.push(i); this.pages[i].redo(); }
+  undo(){ const i = this.order.pop(); if(i === undefined) return; this.redoOrder.push(i); this.pages[i]?.undo(); syncBar(this.name); }
+  redo(){ const i = this.redoOrder.pop(); if(i === undefined) return; this.order.push(i); this.pages[i]?.redo(); syncBar(this.name); }
   clear(){ this.pages[this.cur]?.clear(); }
   redraw(){ this.pages.forEach(p => p?.redraw()); }
   syncTouch(){ this.pages.forEach(p => p?.syncTouch()); }
@@ -3855,6 +4119,11 @@ const ACT = {
   tomydocs: () => document.getElementById('mydocs')?.scrollIntoView({behavior:'smooth', block:'start'}),
   docans: () => showAnswers(),
   docbad: () => docNextBad(),
+  bmstep: b => bmStep(+b.dataset.v),
+  bmtoggle: () => bmToggle(),
+  bmadd: (b, e) => bmAdd(b, e),
+  bmedit: b => bmEdit(b),
+  bmauto: () => bmAuto(),
   wizsplit: b => { if(!wiz) return; wiz.split = b.dataset.v; b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); document.querySelector('[data-act=wizgo]').textContent = wiz.split === 'page' ? '次へ（問題ごとに分ける）' : '取り込む'; },
   docfilter: () => toggleDocFilter(),
   pmark: b => markPage(b),
@@ -3924,11 +4193,12 @@ document.addEventListener('click', e => {
   if(e.target.id === 'celebrate'){ closeCeleb(); return; }
   const b = e.target.closest('[data-act]');
   if(!b || b.disabled) return;
-  ACT[b.dataset.act]?.(b);
+  ACT[b.dataset.act]?.(b, e);
 });
 // 過去問・問題集の取り込み
 document.addEventListener('change', e => {
   if(e.target.id === 'docqsel'){ showDocQ(+e.target.value); return; }
+  if(e.target.id === 'bmsel'){ goBm(+e.target.value); return; }
   if(e.target.classList.contains('wizfile')){ wizSet(e.target.dataset.role, [...e.target.files]); return; }
   if(e.target.id === 'setfile'){ const f = e.target.files[0]; e.target.value = ''; if(f) importSetFile(f); return; }
   if(e.target.id === 'bulkfile' && wiz){ wiz.bulk = [...e.target.files]; bulkPreview(); return; }
