@@ -611,6 +611,29 @@ body.bm-edit .bmbar{display:flex}
 body.bm-edit .extools{display:none}
 .pg.note{background:#fff linear-gradient(#dbe3ea 1px, transparent 1px) 0 0/100% 32px}
 #notebox:not(:empty){margin-bottom:14px}
+
+.bmbtn.warn{border-color:#d97706;color:#d97706;background:var(--warn-weak)}
+#modal .sheet.bmrsheet{display:flex;flex-direction:column;padding:0;overflow:hidden;max-width:760px;height:88vh}
+.bmrbody{flex:1;overflow:auto;padding:18px 16px 10px;-webkit-overflow-scrolling:touch}
+.bmpad{flex:0 0 auto;border-top:1px solid var(--line);padding:8px 12px calc(10px + env(safe-area-inset-bottom));background:var(--card)}
+.bmgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.bmc{display:flex;flex-direction:column;align-items:stretch;gap:2px;padding:4px;border:2px solid var(--line);border-radius:10px;background:var(--card);text-align:center;min-width:0}
+.bmc img{width:100%;border-radius:6px;display:block;background:#fff}
+.bmc .noimg{font-size:11px;color:var(--sub);padding:8px 0}
+.bmc b{font-size:22px;line-height:1.2;font-variant-numeric:tabular-nums}
+.bmc b em{font-style:normal;font-size:13px;color:var(--ok)}
+.bmc b i{font-style:normal;color:var(--accent);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.bmc small{font-size:10px;color:#d97706;font-weight:700;line-height:1.2}
+.bmc.sus{border-color:#d97706;background:var(--warn-weak)}
+.bmc.ok{border-color:var(--ok)}
+.bmc.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak)}
+.bmkeys{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}
+.bmkeys .ck{height:44px;font-size:20px;border-radius:10px}
+.bmkeys .ck.fn{grid-column:span 2;font-size:14px}
+.bmkeys .ck.cl{grid-column:span 3}
+.bmkeys .ck.eq{grid-column:span 5;font-size:16px}
+@media (max-width:520px){ .bmkeys{grid-template-columns:repeat(5,1fr)} .bmkeys .ck.fn{grid-column:span 1} .bmkeys .ck.cl{grid-column:span 2;font-size:12px} .bmkeys .ck.eq{grid-column:span 2;font-size:13px} .bmgrid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))} }
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -2219,7 +2242,7 @@ function showBasics(){
     <button class="btn primary" data-act="closeModal">とじる</button>`);
 }
 function openModal(html){ const m = document.getElementById('modal'); m.innerHTML = `<div class="sheet">${html}</div>`; m.classList.add('show'); }
-function closeModal(){ document.getElementById('modal').classList.remove('show'); rev = null; }
+function closeModal(){ document.getElementById('modal').classList.remove('show'); rev = null; if(bmr){ bmr = null; if(docv) renderBm(); } }
 
 /* =========================================================
    仕訳を入力する出題
@@ -3087,7 +3110,7 @@ async function revSave(){
     }catch(e){ console.warn(e); }
     rev = null; closeModal();
     toast(found ? `取り込みました。問題番号を${found}か所見つけました` : n === 1 ? '取り込みました。解いたら ○△× スタンプで採点しよう' : `${n}問取り込みました`);
-    openDoc(d.id, {q:q0});
+    openDoc(d.id, {q:q0, review:found > 0});
   }catch(e){ importError(e); }
 }
 async function wizImport(groups){
@@ -3178,7 +3201,7 @@ async function openDoc(id, opt = {}){
         <button class="tool" data-act="docq" data-v="1" aria-label="次の問題">▶</button>
         <button class="tool filtbtn" data-act="docfilter" aria-label="○以外だけ">×△だけ</button></span>
         <span class="bmnav" id="bmnav"><button class="tool" data-act="bmstep" data-v="-1" aria-label="前の問題へ">◀</button><select id="bmsel" aria-label="問題番号を選ぶ"></select><button class="tool" data-act="bmstep" data-v="1" aria-label="次の問題へ">▶</button></span>
-        <button class="tool bmbtn" data-act="bmtoggle" aria-label="問題番号のしおりを編集">🔖<span class="lb"> 番号</span></button>
+        <button class="tool bmbtn" data-act="bmreview" aria-label="問題番号をチェック・修正">🔖<span class="lb"> 番号</span></button>
         <span class="stsum" id="stsum"></span><button class="tool" data-act="docbad" aria-label="次の×△のスタンプへ">次の×△ ↓</button></div>
       <div class="bmbar"><span class="sub" style="flex:1">見出しをタップで追加／番号をタップで修正・削除</span><button class="mini" data-act="bmauto">🔍 写真から自動で探す</button><button class="mini" data-act="bmtoggle" style="background:var(--accent);color:var(--accent-text)">完了</button></div>
       <div class="extools">${inkBarHTML('doc', true)}<button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋<span class="lb"> 指で書く</span></button></div></div>
@@ -3191,6 +3214,7 @@ async function openDoc(id, opt = {}){
   const qi = Math.min(Math.max(opt.q || 0, 0), docv.items.length - 1);
   showDocQ(qi);
   if(opt.answers) showAnswers();
+  if(opt.review && bmSuspects().size){ bmr = null; bmReview(); }
 }
 function qLabel(i){ const m = docv.marks[i]; return `問${i+1}${m ? ' ' + MK[m.v].t : ''}`; }
 function inkPage(i, wrap){
@@ -3338,8 +3362,13 @@ function normGlyph(src, sx, sy, sw, sh){   // 文字を20×20にそろえる（�
   n = Math.sqrt(n) || 1; for(let i = 0; i < GS*GS; i++) out[i] /= n;
   return out;
 }
-let DIGIT_TPL = null;
-function digitTemplates(){   // 太字の数字の見本（端末のフォントから作る）
+/* 数字の見本：端末のフォントから作るもの ＋ 実際の教科書の数字（SEED_GLYPHS）＋ 利用者が直して覚えたもの（この端末に保存） */
+const g2s = v => { let s = ''; for(let i = 0; i < v.length; i++) s += String.fromCharCode(Math.round(Math.min(1, v[i]) * 255)); return btoa(s); };
+const s2g = s => { const b = atob(s), v = new Float32Array(b.length); let n = 0; for(let i = 0; i < b.length; i++){ v[i] = b.charCodeAt(i) / 255; n += v[i]*v[i]; } n = Math.sqrt(n) || 1; for(let i = 0; i < v.length; i++) v[i] /= n; return v; };
+const BANK_KEY = 'boki2_glyphs';
+let DIGIT_TPL = null, GLYPH_BANK = null;
+function glyphBank(){ if(!GLYPH_BANK){ try{ GLYPH_BANK = JSON.parse(localStorage.getItem(BANK_KEY)) || {}; }catch(e){ GLYPH_BANK = {}; } } return GLYPH_BANK; }
+function digitTemplates(){
   if(DIGIT_TPL) return DIGIT_TPL;
   const fonts = ['bold 64px Helvetica, Arial, sans-serif', 'italic bold 64px Helvetica, Arial, sans-serif', 'bold 64px "Hiragino Sans", "Noto Sans JP", sans-serif'];
   const c = document.createElement('canvas'); c.width = c.height = 110; const x = c.getContext('2d', {willReadFrequently:true}); DIGIT_TPL = [];
@@ -3349,9 +3378,36 @@ function digitTemplates(){   // 太字の数字の見本（端末のフォント
     for(let i = 0; i < 110*110; i++) if(d[i*4] > 128){ const px = i % 110, py = (i - px) / 110; if(px < x0) x0 = px; if(px > x1) x1 = px; if(py < y0) y0 = py; if(py > y1) y1 = py; }
     if(x1 >= x0) DIGIT_TPL.push({d:dg, v:normGlyph(c, x0, y0, x1-x0+1, y1-y0+1)});
   }
+  const bank = glyphBank();
+  for(let dg = 0; dg < 10; dg++) for(const s of [...(SEED_GLYPHS[dg] || []), ...(bank[dg] || [])]) DIGIT_TPL.push({d:dg, v:s2g(s), real:true});
   return DIGIT_TPL;
 }
-function readNumber(img, bx, k){   // 黒い四角の中の白い数字を読む。読めなければ null
+// 直した番号から、その本の数字の形を覚える
+function learnMarker(m){
+  if(!m.g || String(m.n).length !== m.g.length) return false;
+  const bank = glyphBank();
+  String(m.n).split('').forEach((d, i) => { const a = bank[d] = bank[d] || []; if(!a.includes(m.g[i])){ a.unshift(m.g[i]); if(a.length > 12) a.length = 12; } });
+  try{ localStorage.setItem(BANK_KEY, JSON.stringify(bank)); }catch(e){}
+  DIGIT_TPL = null; return true;
+}
+// 切り出した数字（20×20）の列 → 番号。読めなければ null
+function classifyGlyphs(gs){
+  const tpl = digitTemplates(), digs = [];
+  for(const v of gs){
+    const sc = new Float32Array(10);
+    for(const t of tpl){ let dot = 0; for(let i = 0; i < GS*GS; i++) dot += v[i]*t.v[i]; if(dot > sc[t.d]) sc[t.d] = dot; }
+    const rank = [...sc.keys()].sort((a, c) => sc[c] - sc[a]);
+    if(sc[rank[0]] < 0.5) return null;
+    digs.push({d:rank[0], d2:rank[1], gap:sc[rank[0]] - sc[rank[1]]});
+  }
+  if(!digs.length) return null;
+  const n = parseInt(digs.map(v => v.d).join(''), 10);
+  if(!(n >= 1 && n <= 300)) return null;
+  // いちばん自信のない桁を次点の数字に替えた「第2候補」も返す（前後の番号と合うほうを選ぶため）
+  const weak = digs.reduce((a, v) => v.gap < a.gap ? v : a), alt = weak.gap < 0.1 ? parseInt(digs.map(v => v === weak ? v.d2 : v.d).join(''), 10) : null;
+  return {n, alt, gap:weak.gap};
+}
+function squareGlyphs(img, bx, k){   // 黒い四角の中の白い数字を、1文字ずつ20×20の形にして返す
   const T = 168, sc = T / (bx.w / k), cw = T, ch = Math.round(bx.h / k * sc);
   const c = document.createElement('canvas'); c.width = cw; c.height = ch; const x = c.getContext('2d', {willReadFrequently:true});
   x.drawImage(img, bx.x0 / k, bx.y0 / k, bx.w / k, bx.h / k, 0, 0, cw, ch);
@@ -3362,27 +3418,37 @@ function readNumber(img, bx, k){   // 黒い四角の中の白い数字を読む
   for(let i = 0; i < 256; i++){ wb += hist[i]; if(!wb || wb === cw*ch) continue; sb += i*hist[i]; const mb = sb/wb, mf = (sum-sb)/(cw*ch-wb), v = wb*(cw*ch-wb)*(mb-mf)*(mb-mf); if(v > best){ best = v; th = i; } }
   const m = new Uint8Array(cw*ch); for(let i = 0; i < cw*ch; i++) m[i] = g[i] > th ? 1 : 0;
   const gl = ccBoxes(m, cw, ch).filter(b => b.x0 > 1 && b.y0 > 1 && b.x0 + b.w < cw - 1 && b.y0 + b.h < ch - 1 && b.h >= ch * 0.3).sort((a, b) => a.x0 - b.x0);
-  if(!gl.length || gl.length > 3) return null;
-  const tpl = digitTemplates(), tmp = document.createElement('canvas'), tx = tmp.getContext('2d'), digs = [];
+  if(!gl.length || gl.length > 3) return [];
+  const tmp = document.createElement('canvas'), tx = tmp.getContext('2d'), out = [];
   for(const b of gl){
     // この文字の画素だけを取り出す（となりの文字が外接四角に入り込んでも混ざらないように）
-    const lab = new Uint8Array(b.w*b.h), st = [b.s]; const seen = new Set([b.s]);
+    const lab = new Uint8Array(b.w*b.h), st = [b.s], seen = new Set([b.s]);
     while(st.length){ const p = st.pop(), px = p % cw, py = (p - px) / cw; lab[(py-b.y0)*b.w + (px-b.x0)] = 1;
       for(const q of [p-1, p+1, p-cw, p+cw]){ if(q < 0 || q >= cw*ch || seen.has(q) || m[q] !== 2) continue; const qx = q % cw; if(Math.abs(qx - px) > 1) continue; seen.add(q); st.push(q); } }
     tmp.width = b.w; tmp.height = b.h; const id = tx.createImageData(b.w, b.h);
     for(let i = 0; i < b.w*b.h; i++){ const v = lab[i] ? 255 : 0; id.data[i*4] = id.data[i*4+1] = id.data[i*4+2] = v; id.data[i*4+3] = 255; }
     tx.putImageData(id, 0, 0);
-    const v = normGlyph(tmp, 0, 0, b.w, b.h), sc = new Float32Array(10);
-    for(const t of tpl){ let dot = 0; for(let i = 0; i < GS*GS; i++) dot += v[i]*t.v[i]; if(dot > sc[t.d]) sc[t.d] = dot; }
-    const rank = [...sc.keys()].sort((a, c) => sc[c] - sc[a]);
-    if(sc[rank[0]] < 0.5) return null;
-    digs.push({d:rank[0], d2:rank[1], gap:sc[rank[0]] - sc[rank[1]]});
+    out.push(normGlyph(tmp, 0, 0, b.w, b.h));
   }
-  const n = parseInt(digs.map(v => v.d).join(''), 10);
-  if(!(n >= 1 && n <= 300)) return null;
-  // いちばん自信のない桁を次点の数字に替えた「第2候補」も返す（前後の番号と合うほうを選ぶため）
-  const weak = digs.reduce((a, v) => v.gap < a.gap ? v : a), alt = weak.gap < 0.1 ? parseInt(digs.map(v => v === weak ? v.d2 : v.d).join(''), 10) : null;
-  return {n, alt};
+  return out;
+}
+// 丸（ページ番号など）と四角を見分ける：中心からいちばん遠い点までの距離で作った円の面積 ÷ 実際の面積。丸なら約1、四角なら約1.5
+function squareness(mask, W, H, b){
+  const st = [b.s], seen = new Set([b.s]), lo = new Int32Array(b.h).fill(1e9), hi = new Int32Array(b.h).fill(-1), pts = [];
+  while(st.length){ const p = st.pop(), px = p % W, py = (p - px) / W, r = py - b.y0; pts.push(p); if(px < lo[r]) lo[r] = px; if(px > hi[r]) hi[r] = px;
+    for(const q of [p-1, p+1, p-W, p+W]){ if(q < 0 || q >= W*H || seen.has(q) || mask[q] !== 2) continue; if(Math.abs(q % W - px) > 1) continue; seen.add(q); st.push(q); } }
+  let area = 0, cx = 0, cy = 0;
+  for(let r = 0; r < b.h; r++) if(hi[r] >= 0){ const n = hi[r] - lo[r] + 1; area += n; cx += n * (lo[r] + hi[r]) / 2; cy += n * (b.y0 + r); }
+  cx /= area; cy /= area; let rm = 0;
+  for(const p of pts){ const px = p % W, py = (p - px) / W, d = (px-cx)*(px-cx) + (py-cy)*(py-cy); if(d > rm) rm = d; }
+  return Math.PI * rm / area;
+}
+function stripThumb(img, bx, k){   // 見出しの切り抜き（番号チェック画面で、写真の番号と見くらべる用）
+  const sx = Math.max(0, (bx.x0 - bx.w*2.6) / k), sy = Math.max(0, (bx.y0 - bx.h*0.45) / k);
+  const sw = Math.min(img.naturalWidth - sx, bx.w*10.5 / k), sh = Math.min(img.naturalHeight - sy, bx.h*1.9 / k);
+  const c = document.createElement('canvas'); c.width = 252; c.height = Math.max(1, Math.round(252 * sh / sw));
+  c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  const u = c.toDataURL('image/jpeg', 0.7); c.width = c.height = 0; return u;
 }
 async function detectPage(blob){
   const url = URL.createObjectURL(blob), img = new Image(); img.src = url;
@@ -3392,19 +3458,26 @@ async function detectPage(blob){
   const d = x.getImageData(0, 0, W, H).data, dark = new Uint8Array(W*H);
   for(let i = 0, p = 0; i < W*H; i++, p += 4){ const r = d[p], g = d[p+1], b = d[p+2]; if(r + g + b < 255 && Math.max(r, g, b) - Math.min(r, g, b) < 60) dark[i] = 1; }
   c.width = c.height = 0;
-  // 黒くて四角い、ページ幅の2〜7%くらいの大きさのもの。右端（ページ番号など）は除く
+  // 黒くて四角い、ページ幅の2〜7%くらいの大きさのもの。右端（となりのページ）と、丸いもの（ページ番号）は除く
   return ccBoxes(dark, W, H).filter(b => b.w >= 0.022*W && b.w <= 0.075*W && b.h >= 0.022*W && b.h <= 0.075*W && b.w/b.h >= 0.6 && b.w/b.h <= 1.7 && b.n/(b.w*b.h) >= 0.5 && (b.x0 + b.w/2) < 0.6*W)
-    .sort((a, b) => a.y0 - b.y0).map(b => { const r = readNumber(img, b, k); return {y:Math.max(0, (b.y0 - b.h*0.6) / H), n:r ? r.n : null, alt:r ? r.alt : null, u:!r}; });
+    .filter(b => squareness(dark, W, H, b) > 1.22)
+    .sort((a, b) => a.y0 - b.y0).map(b => {
+      const gs = squareGlyphs(img, b, k), r = gs.length ? classifyGlyphs(gs) : null;
+      const m = {y:Math.max(0, (b.y0 - b.h*0.6) / H), n:r ? r.n : null, alt:r ? r.alt : null, g:gs.map(g2s), t:stripThumb(img, b, k)};
+      if(!r) m.u = true; else if(r.gap < 0.05) m.lo = true;
+      return m; });
 }
-function fixSeq(list, consecutive){   // 読めなかった番号は前後から推測。順番がおかしいものは「？」つきにする
+function fixSeq(list, consecutive){   // 読めなかった番号は前後から推測。順番がおかしいものは「？」つきにする。利用者が確かめた番号（c）は変えない
   list.forEach((m, i) => {
     const prev = i ? list[i-1].n : null, nx = list.slice(i+1).find(v => v.n != null), next = nx ? nx.n : null;
-    if(prev != null && next === prev + 2 && m.n !== prev + 1){ m.n = prev + 1; m.u = false; }   // 前後が 4 と 6 なら、間は 5 しかない
+    if(m.c){ delete m.alt; return; }
+    delete m.u;
+    if(prev != null && next === prev + 2 && m.n !== prev + 1){ m.n = prev + 1; }   // 前後が 4 と 6 なら、間は 5 しかない
     else if(!consecutive && m.n != null && m.alt != null && prev != null && m.n <= prev && m.alt > prev && (next == null || m.alt < next)) m.n = m.alt;   // 解答用紙：順番が合うのは第2候補だけ
     else if(consecutive && m.n != null && m.alt != null && (prev != null ? m.n !== prev + 1 && m.alt === prev + 1 : next != null && m.n !== next - 1 && m.alt === next - 1)) m.n = m.alt;   // 第2候補なら連番になる
     else if(m.n == null){ m.n = prev != null ? prev + 1 : next != null ? Math.max(1, next - 1) : 1; m.u = true; }
     else if(prev != null && m.n <= prev) m.u = true;
-    delete m.alt; if(!m.u) delete m.u;
+    delete m.alt;
   });
 }
 // まだ調べていないページから番号を探して bm に足す
@@ -3426,6 +3499,18 @@ async function detectDoc(d, bm, prog){
 }
 
 /* ---------- しおりを使って移動する ---------- */
+// 実際の教科書の見出し番号から取った数字の形（20×20の濃淡を文字列にしたもの）。端末のフォントとちがっても読めるようにするための見本
+const SEED_GLYPHS = {
+  1:["AAAAAAAAAAAAEx0dHQAAAAAAAAAAAAAAAAAAABwdHR0dAAAAAAAAAAAAAAAAAAAdHR0dHR0AAAAAAAAAAAAAAAAAAB0dHR0dHQAAAAAAAAAAAAAAAAAAHR0dHR0dAAAAAAAAAAAAAAAAAAAAAB0dHR0AAAAAAAAAAAAAAAAAAAAAHR0dHQAAAAAAAAAAAAAAAAAAAAAdHR0dAAAAAAAAAAAAAAAAAAAAAB0dHRQAAAAAAAAAAAAAAAAAAAAAHR0dFAAAAAAAAAAAAAAAAAAAAAAdHR0UAAAAAAAAAAAAAAAAAAAAAB0dHRQAAAAAAAAAAAAAAAAAAAAAHR0dAAAAAAAAAAAAAAAAAAAAAAAdHR0AAAAAAAAAAAAAAAAAAAAAAB0dHQAAAAAAAAAAAAAAAAAAAAAAHR0dAAAAAAAAAAAAAAAAAAAAAAAdHR0AAAAAAAAAAAAAAAAAAAAAAB0dHQAAAAAAAAAAAAAAAAAAAAAbHR0dAAAAAAAAAAAAAAAAAAAAAAAdHR0AAAAAAAAAAA==","AAAAAAAAAAACHBwcFQAAAAAAAAAAAAAAAAAAFRwcHBwcAAAAAAAAAAAAAAAAABkcHBwcHBwAAAAAAAAAAAAAAAAAHBwcHBwcHAAAAAAAAAAAAAAAAAAcHBwcHBwcAAAAAAAAAAAAAAAAAAAAABwcHBcAAAAAAAAAAAAAAAAAAAAAHBwcDAAAAAAAAAAAAAAAAAAAAAMcHBwMAAAAAAAAAAAAAAAAAAAAAxwcHAwAAAAAAAAAAAAAAAAAAAADHBwcAAAAAAAAAAAAAAAAAAAAABwcHBwAAAAAAAAAAAAAAAAAAAAAHBwcHAAAAAAAAAAAAAAAAAAAAAAcHBwcAAAAAAAAAAAAAAAAAAAAABwcHBwAAAAAAAAAAAAAAAAAAAAAHBwcHAAAAAAAAAAAAAAAAAAAAAAcHBwcAAAAAAAAAAAAAAAAAAAAABwcHBwAAAAAAAAAAAAAAAAAAAAAHBwcHAAAAAAAAAAAAAAAAAAAAAAcHBwXAAAAAAAAAAAAAAAAAAAAABwcHAAAAAAAAAAAAA==","AAAAAAAAAAAAFBsbAAAAAAAAAAAAAAAAAAAACBsbGxsNAAAAAAAAAAAAAAAAAAAbGxsbGxsAAAAAAAAAAAAAAAAAGxsbGxsbGwAAAAAAAAAAAAAAAAAbGxsbGxsbAAAAAAAAAAAAAAAAABsbGxsbGxsAAAAAAAAAAAAAAAAAAAAAGxsbGwAAAAAAAAAAAAAAAAAAAAAbGxsbAAAAAAAAAAAAAAAAAAAAABsbGxsAAAAAAAAAAAAAAAAAAAAAGxsbGwAAAAAAAAAAAAAAAAAAAAAbGxsbAAAAAAAAAAAAAAAAAAAAABsbGxsAAAAAAAAAAAAAAAAAAAAAGxsbGwAAAAAAAAAAAAAAAAAAAAAbGxsbAAAAAAAAAAAAAAAAAAAAABsbGxsAAAAAAAAAAAAAAAAAAAAAGxsbGwAAAAAAAAAAAAAAAAAAAAAbGxsbAAAAAAAAAAAAAAAAAAAAABsbGxsAAAAAAAAAAAAAAAAAAAAAGxsbGwAAAAAAAAAAAAAAAAAAAAAVGxsIAAAAAAAAAA==","AAAAAAAAAAAADh4eHgAAAAAAAAAAAAAAAAAAAB4eHh4eAAAAAAAAAAAAAAAAAAAZHh4eHh4AAAAAAAAAAAAAAAAAAB4eHh4eHgAAAAAAAAAAAAAAAAAAHh4eHh4eAAAAAAAAAAAAAAAAAAAAAAAeHh4AAAAAAAAAAAAAAAAAAAAAAB4eHgAAAAAAAAAAAAAAAAAAAAAAHh4eAAAAAAAAAAAAAAAAAAAAAAAeHh4AAAAAAAAAAAAAAAAAAAAAAB4eHgAAAAAAAAAAAAAAAAAAAAAAHh4eAAAAAAAAAAAAAAAAAAAAAAAeHh4AAAAAAAAAAAAAAAAAAAAAFx4eHgAAAAAAAAAAAAAAAAAAAAASHh4eAAAAAAAAAAAAAAAAAAAAAAAeHh4AAAAAAAAAAAAAAAAAAAAAAB4eHgAAAAAAAAAAAAAAAAAAAAAAHh4eAAAAAAAAAAAAAAAAAAAAABceHh4AAAAAAAAAAAAAAAAAAAAAAB4eHgAAAAAAAAAAAAAAAAAAAAAAHh4PAAAAAAAAAA=="],
+  2:["AAAAAAAAAAwVFRUVDQAAAAAAAAAAAAAAAA4VFRUVFRUVFQUAAAAAAAAAAAAVFRUVFRUVFRUVFQAAAAAAAAAAABUVFRUVFRUVFRUVEQAAAAAAAAAGFRUVFQAAABEVFRUVAAAAAAAAAAkVFRUAAAAAABUVFRUAAAAAAAAAAAQEAAAAAAAAFRUVFQAAAAAAAAAAAAAAAAAAABQVFRUVAAAAAAAAAAAAAAAAAAAQFRUVFQoAAAAAAAAAAAAAAAAAABUVFRUVAAAAAAAAAAAAAAAAAAAVFRUVFQAAAAAAAAAAAAAAAAAAFRUVFRUGAAAAAAAAAAAAAAAAABUVFRUVBAAAAAAAAAAAAAAAAAAVFRUVFQQAAAAAAAAAAAAAAAAAFRUVFRURAAAAAAAAAAAAAAAAABUVFRUVFQUAAAAAAAAAAAAAAAAJFRUVFRUVFRUVFRUDAAAAAAAAABUVFRUVFRUVFRUVFRUAAAAAAAAAFRUVFRUVFRUVFRUVFQAAAAAAAAAFFRUVFRUVFRUVFRUGAAAAAA==","AAAAAAAAAAAOFxcXFwAAAAAAAAAAAAAAAAAUFxcXFxcXFxEAAAAAAAAAAAAAFxcXFxcXFxcXFwIAAAAAAAAAAAAXFxcXDg4XFxcXFwAAAAAAAAAADhcXFwAAAAAXFxcXAAAAAAAAAAAOFxcCAAAAABcXFxcAAAAAAAAAAAAUAAAAAAAAFxcXFwAAAAAAAAAAAAAAAAAAAAAXFxcOAAAAAAAAAAAAAAAAAAAAFxcXFwAAAAAAAAAAAAAAAAAAABcXFxcAAAAAAAAAAAAAAAAAAAAUFxcXFAAAAAAAAAAAAAAAAAAABRcXFxcAAAAAAAAAAAAAAAAAAA4XFxcXAAAAAAAAAAAAAAAAAAACFxcXFwAAAAAAAAAAAAAAAAAAABcXFxcRAAAAAAAAAAAAAAAAAAAXFxcXFwAABQgAAAAAAAAAAAAAExcXFxcXFxcXFxcTAAAAAAAAAAAXFxcXFxcXFxcXFxcAAAAAAAAAABcXFxcXFxcXFxcXDAAAAAAAAAAAExcXDg4OAAAAAAAAAAAAAA==","AAAAAAAAAAAYGBgYAAAAAAAAAAAAAAAAAAAYGBgYGBgYGAAAAAAAAAAAAAAAGBgYGBgYGBgYAAAAAAAAAAAAAAAYGBgLAAAYGBgYAAAAAAAAAAAAEhgYDwAAAAAYGBgAAAAAAAAAAAASGBgAAAAAABgYGAAAAAAAAAAAAAAAAAAAAAAFGBgYAAAAAAAAAAAAAAAAAAAAABgYGAAAAAAAAAAAAAAAAAAAAAAAGBgYAAAAAAAAAAAAAAAAAAAAABgYGAcAAAAAAAAAAAAAAAAAAAAYGBgYAAAAAAAAAAAAAAAAAAAAFxgYGAAAAAAAAAAAAAAAAAAAAAAYGBgAAAAAAAAAAAAAAAAAAAAAGBgYCwAAAAAAAAAAAAAAAAAAABgYGBYAAAAAAAAAAAAAAAAAAAAGGBgYAAAAAAAAAAAAAAAAAAAABxgYGBgRGBgYGBQAAAAAAAAAAAAYGBgYGBgYGBgYGAAAAAAAAAAAABgYGBgYGBgYGBgUAAAAAAAAAAAAGBgYGBQUAAAAAAAAAAAAAA==","AAAAAAAAAAAADxkZGQYAAAAAAAAAAAAAAAAADhkZGRkZGRcAAAAAAAAAAAAAAAsZGRkZGRkZGQMAAAAAAAAAAAAAGRkZDAAMGRkZGQAAAAAAAAAAABMZGRkAAAAIGRkZAAAAAAAAAAAAFBkZAAAAAAgZGRkAAAAAAAAAAAAAAAAAAAAAGRkZEQAAAAAAAAAAAAAAAAAAAAAZGRkAAAAAAAAAAAAAAAAAAAAAGRkZGQAAAAAAAAAAAAAAAAAAAAUZGRkAAAAAAAAAAAAAAAAAAAAFGRkZAwAAAAAAAAAAAAAAAAAAABkZGREAAAAAAAAAAAAAAAAAAAAZGRkZAAAAAAAAAAAAAAAAAAAAFBkZGQAAAAAAAAAAAAAAAAAAAAYZGRkAAAAAAAAAAAAAAAAAAAAAGRkZAAAAAAAAAAAAAAAAAAAAABkZGRkUCxkZGQsAAAAAAAAAAAAWGRkZGRkZGRkZGQAAAAAAAAAAABkZGRkZGRkZGRkAAAAAAAAAAAAAFhkZGREREQAAAAAAAAAAAA=="],
+  3:["AAAAAAAAAAAXFxcXEAAAAAAAAAAAAAAAAAAXFxcXFxcXFwAAAAAAAAAAAAAAFxcXFxcXFxcXFwAAAAAAAAAAAA4XFxcAAAAWFxcXEAAAAAAAAAAAFxcXCQAAAAAXFxcXAAAAAAAAAAAPFwEAAAAAABcXFxcAAAAAAAAAAAAAAAAAAAAAFxcXEAAAAAAAAAAAAAAAAAAAABQXFxcAAAAAAAAAAAAAAAAABxcXFxcXAAAAAAAAAAAAAAAAAAAXFxcXFxcAAAAAAAAAAAAAAAAAABcXFxcXFwQAAAAAAAAAAAAAAAAAAAAAFxcXFwAAAAAAAAAAAAAAAAAAAAAAFxcXFwAAAAAAAAAAAAAAAAAAAAAHFxcXAAAAAAAAAAAAAAAAAAAAAAcXFxcAAAAAAAAAABcXFwAAAAAAFxcXFwAAAAAAAAAAFxcXFwAAABQXFxcQAAAAAAAAAAAJFxcXFxcXFxcXFwAAAAAAAAAAAAAWFxcXFxcXFxcAAAAAAAAAAAAAAAAAFRcXFxcAAAAAAAAAAA==","AAAAAAAAAAoXFxcXFwAAAAAAAAAAAAAAAAAXFxcXFxcXFwoAAAAAAAAAAAAAFxcXFxcXFxcXFwAAAAAAAAAAAAwXFxcDAAADFxcXDQAAAAAAAAAAFxcXBgAAAAAVFxcXAAAAAAAAAAAIEAUAAAAAAAoXFxQAAAAAAAAAAAAAAAAAAAAAFxcXBwAAAAAAAAAAAAAAAAAAABcXFxcAAAAAAAAAAAAAAAAAEhcXFxcXAAAAAAAAAAAAAAAAAAAXFxcXFxcAAAAAAAAAAAAAAAAAABcXFxcXFxcAAAAAAAAAAAAAAAAAAAAAFBcXFw0AAAAAAAAAAAAAAAAAAAAAEBcXFwAAAAAAAAAAAAAAAAAAAAAEFxcXAAAAAAAAAAAAAAAAAAAAAAMXFxcAAAAAAAAAABcXFwUAAAAAFxcXFwAAAAAAAAAAFxcXFwMAABYXFxcNAAAAAAAAAAAKFxcXFxcXFxcXFwAAAAAAAAAAAAAVFxcXFxcXFxYAAAAAAAAAAAAAAAAAFRcXFxYAAAAAAAAAAA==","AAAAAAAAAAAYGBgYGAAAAAAAAAAAAAAAAAAWGBgYGBgYGBUAAAAAAAAAAAAAAxgYGBgYGBgYGAAAAAAAAAAAAAAYGBgPAAAAGBgYEwAAAAAAAAAADxgYDgAAAAAYGBgYAAAAAAAAAAAAAwMAAAAAAAcYGBgAAAAAAAAAAAAAAAAAAAAAGBgYEAAAAAAAAAAAAAAAAAAAAAAYGBgAAAAAAAAAAAAAAAAADxgYGBgYCQAAAAAAAAAAAAAAAAAYGBgYGBgAAAAAAAAAAAAAAAAAABgYGBgYGBgAAAAAAAAAAAAAAAAAAAAAGBgYGAYAAAAAAAAAAAAAAAAAAAAAGBgYGAAAAAAAAAAAAAAAAAAAAAAHGBgYAAAAAAAAAAAAAAAAAAAAAAAYGBgAAAAAAAAAABgYGAAAAAAADRgYFQAAAAAAAAAAGBgYGAAAAA8YGBgAAAAAAAAAAAACGBgYGBgYGBgYGAAAAAAAAAAAAAATGBgYGBgYGBgAAAAAAAAAAAAAAAAAGBgYGBgPAAAAAAAAAA=="],
+  4:["AAAAAAAAAAAAAAoVFQAAAAAAAAAAAAAAAAAAAAAAFRUVFQAAAAAAAAAAAAAAAAAAABUVFRUIAAAAAAAAAAAAAAAAAAAHFRUVFQAAAAAAAAAAAAAAAAAAABUVFRURAAAAAAAAAAAAAAAAAAAMFRUVFQAAAAAAAAAAAAAAAAAAABUVFRUBAAAAAAAAAAAAAAAAAAASFRUVFQAAAAAAAAAAAAAAAAAAABUVFRUAABEVEQAAAAAAAAAAAAAVFRUVEAAAFRUVAwAAAAAAAAAAABUVFRUAAAAVFRUNAAAAAAAAAAAVFRUVFAAAEBUVFQ0AAAAAAAAABxUVFRUAAAATFRUVFQAAAAAAAAAVFRUVFQAAARUVFRUVAAAAAAAADRUVFRUVFRUVFRUVFRUVAAAAAAAVFRUVFRUVFRUVFRUVFRUAAAAAABUVFRUVFRUVFRUVFRUSAAAAAAAAFRUVFRUVFQMVFRUVFQAAAAAAAAAADwAAAAAAAAAVFRUVAAAAAAAAAAAAAAAAAAAAABEVFQUAAAAAAA=="],
+  5:["AAAAAAAKERUVFRUVFRURAAAAAAAAAAAAERUVFRUVFRUVFRUAAAAAAAAAAAAVFRUVFRUVFRUVFQAAAAAAAAAAABUVFRUVFRUVFRUEAAAAAAAAAAAAFRUVFQAAAAAAAAAAAAAAAAAAAAAVFRUVAAAAAAAAAAAAAAAAAAAAABUVFRUFFBUVEQAAAAAAAAAAAAAAFRUVFRUVFRUVFQMAAAAAAAAAAAAVFRUVFRUVFRUVFQAAAAAAAAAAABUVFRUVFRUVFRUVDAAAAAAAAAAAChUVFQEAAAwVFRUVAAAAAAAAAAAACAIAAAAAABUVFRUAAAAAAAAAAAAAAAAAAAAAFRUVFQAAAAAAAAAAAAAAAAAAAAAVFRUVAAAAAAAAAAAAAAAAAAAAABUVFRUAAAAAAAAAABUVFQUAAAADFRUVDAAAAAAAAAAAFRUVFRUDAxUVFRUAAAAAAAAAAAAKFRUVFRUVFRUVEwAAAAAAAAAAAAAVFRUVFRUVFRUAAAAAAAAAAAAAAAAIFRUVFRQJAAAAAAAAAA==","AAAAAAAAAAAAAA0XFxcTAAAAAAAAAAAAAA4XFxcXFxcXFxcAAAAAAAAAAAAAFxcXFxcXFxcXFwAAAAAAAAAAAAAXFxcXFxcXFxcAAAAAAAAAAAAAABcXFwcAAAAAAAAAAAAAAAAAAAAAFxcXBwAAAAAAAAAAAAAAAAAAAAAXFxcOABcQAgAAAAAAAAAAAAAAABcXFxcXFxcXFwAAAAAAAAAAAAAAFxcXFxcXFxcXDAAAAAAAAAAAAAAXFxcXFxcXFxcXAAAAAAAAAAAAABcXFwAAABcXFxcAAAAAAAAAAAAAEBIAAAAAABcXFwAAAAAAAAAAAAAAAAAAAAAAFxcXAAAAAAAAAAAAAAAAAAAAAAAXFxcAAAAAAAAAAAAAAAAAAAAAFxcXFwAAAAAAAAAAAAsXFwoAAAAXFxcPAAAAAAAAAAAAFxcXFwAAFxcXFwAAAAAAAAAAAAAOFxcXFxcXFxcWAAAAAAAAAAAAAAAXFxcXFxcXFwAAAAAAAAAAAAAAAAAOEhcXDgcAAAAAAAAAAA=="],
+  6:["AAAAAAAAAAAAChYWFgAAAAAAAAAAAAAAAAAAAAEWFhYWAAAAAAAAAAAAAAAAAAAAFhYWFg4AAAAAAAAAAAAAAAAAAAAWFhYWAAAAAAAAAAAAAAAAAAAAFhYWFgQAAAAAAAAAAAAAAAAAAAIWFhYWAAAAAAAAAAAAAAAAAAAAFhYWFgMAAAAAAAAAAAAAAAAAAAAWFhYWCwAAAAAAAAAAAAAAAAAADhYWFhYWFhYWAAAAAAAAAAAAAAQWFhYWFhYWFhYWAAAAAAAAAAAAFhYWFhYWFhYWFhYLAAAAAAAAAAUWFhYWAAAAFBYWFhYAAAAAAAAAFhYWFgkAAAAAFhYWFgAAAAAAAAAWFhYWAAAAAAAWFhYWAAAAAAAAABYWFhYAAAAAABYWFhYAAAAAAAAAFhYWFgAAAAAUFhYWCwAAAAAAAAAWFhYWFhULFhYWFhYAAAAAAAAAAAUWFhYWFhYWFhYWBQAAAAAAAAAAABYWFhYWFhYWFgMAAAAAAAAAAAAAAAsWFhYWFg0AAAAAAAAAAA==","AAAAAAAAAAAAABoaAAAAAAAAAAAAAAAAAAAAAAACGhoAAAAAAAAAAAAAAAAAAAAAABoaGgAAAAAAAAAAAAAAAAAAAAAAGhoIAAAAAAAAAAAAAAAAAAAAABoaGgAAAAAAAAAAAAAAAAAAAAAAGhoaAAAAAAAAAAAAAAAAAAAAAAAaGgAAAAAAAAAAAAAAAAAAAAAAGhoaAxIaAAAAAAAAAAAAAAAAAAAaGhoaGhoaAAAAAAAAAAAAAAAAABoaGhoaGhoaAAAAAAAAAAAAAAAaGhoaGhoaGhoAAAAAAAAAAAAAABoaGgAAABoaGgAAAAAAAAAAAAAXGhoAAAAAGhoaAAAAAAAAAAAAABoaGgAAAAAaGhoAAAAAAAAAAAAAGhoaAAAAABoaAAAAAAAAAAAAAAAaGhoAAAAaGhoAAAAAAAAAAAAAABoaGgAAGhoaEwAAAAAAAAAAAAAAGhoaGhoaGhoAAAAAAAAAAAAAAAAXGhoaGhoIAAAAAAAAAAAAAAAAAAASGhoAAAAAAAAAAAAAAA=="],
+  7:["AAAAAAAAAAAAARsbGxsbAAAAAAAAAAAAAAAbGxsbGxsbGxsAAAAAAAAAAAAAGxsbGxsbGxsbGwAAAAAAAAAAAAAbGxsbGxsbGxsZAAAAAAAAAAAAABsbGwAAABYbGwAAAAAAAAAAAAAAGxsbAAAAGxsbAAAAAAAAAAAAAAAbGxIAAAAbGxsAAAAAAAAAAAAAAAAFAAAAGRsbDQAAAAAAAAAAAAAAAAAAAAAbGxsAAAAAAAAAAAAAAAAAAAAAABsbGwAAAAAAAAAAAAAAAAAAAAACGxsNAAAAAAAAAAAAAAAAAAAAABsbGwAAAAAAAAAAAAAAAAAAAAAAGxsbAAAAAAAAAAAAAAAAAAAAAAcbGxYAAAAAAAAAAAAAAAAAAAAAGxsbAQAAAAAAAAAAAAAAAAAAAAAbGxsAAAAAAAAAAAAAAAAAAAAAABsbGwAAAAAAAAAAAAAAAAAAAAAZGxsDAAAAAAAAAAAAAAAAAAAAABsbGwAAAAAAAAAAAAAAAAAAAAAAGxsYAAAAAAAAAAAAAA=="],
+  8:["AAAAAAAAAAARFRUVDAAAAAAAAAAAAAAAAAAPFRUVFRUVFQAAAAAAAAAAAAAAFRUVFRUVFRUVFQAAAAAAAAAAAA0VFRUVAAAVFRUVDQAAAAAAAAAAFRUVFAAAAAAVFRUVAAAAAAAAAAAVFRUAAAAAAA0VFRIAAAAAAAAAABUVFQ0AAAAAFRUVDQAAAAAAAAAAEBUVFQAAAA0VFRUAAAAAAAAAAAAAFRUVFRUVFRUVBAAAAAAAAAAAAAAAFRUVFRUVFRUAAAAAAAAAAAAAAAEVFRUVFRUVFRUAAAAAAAAAAAAAFRUVFQAAERUVFQ4AAAAAAAAAABUVFRUAAAAADRUVFQAAAAAAAAAAFRUVAAAAAAAAFRUVAAAAAAAAAAAVFRUAAAAAAAAVFRUAAAAAAAAAABUVFQ0AAAAADRUVFQAAAAAAAAAAFRUVFQcAABQVFRUNAAAAAAAAAAAAFRUVFRUVFRUVFQAAAAAAAAAAAAAOFRUVFRUVFRUAAAAAAAAAAAAAAAAAEBUVFRUFAAAAAAAAAA=="],
+  9:["AAAAAAAAAAsWFhYWCwAAAAAAAAAAAAAAAAEWFhYWFhYWFgMAAAAAAAAAAAADFhYWFhYWFhYWFgAAAAAAAAAAABYWFhYWEA4WFhYWCQAAAAAAAAAWFhYWFgAAAAIWFhYWAAAAAAAAABYWFhYAAAAAABYWFhYAAAAAAAAAFhYWFgAAAAAAFhYWFgAAAAAAAAAWFhYWAAAAAA0WFhYQAAAAAAAAABYWFhYWAAALFhYWFgAAAAAAAAAADxYWFhYWFhYWFhYWAAAAAAAAAAAAFhYWFhYWFhYWFgAAAAAAAAAAAAAAFhYWFhYWFhYWAAAAAAAAAAAAAAAAAAAHFhYWFgAAAAAAAAAAAAAAAAAAAA4WFhYWAAAAAAAAAAAAAAAAAAAAFhYWFgAAAAAAAAAAAAAAAAAAABAWFhYJAAAAAAAAAAAAAAAAAAAAFhYWFgAAAAAAAAAAAAAAAAAAABUWFhYHAAAAAAAAAAAAAAAAAAAAFhYWFgAAAAAAAAAAAAAAAAAAAAAWFhYAAAAAAAAAAAAAAA=="]
+};
 const NOTE0 = 100000;   // ノート（解答用紙がない問題用の白紙）の書き込みは「100000＋問題番号」のページとして保存
 function bmPane(pane){   // いま開いているセットの、その種類のしおりを上から順に
   const it = docv.items[docv.qi], out = [];
@@ -3439,10 +3524,12 @@ function saveBm(){ DB.putInk(docv.id+':bm', docv.bm).catch(() => toast('しお�
 function renderBm(){
   if(!docv) return;
   document.querySelectorAll('.bmt, .bmlayer').forEach(el => el.remove());
+  const sus = bmSuspects();
+  document.querySelectorAll('.bmbtn').forEach(b => { b.classList.toggle('warn', sus.size > 0); b.querySelector('.lb').textContent = sus.size ? ` 番号（要確認${sus.size}）` : ' 番号'; });
   const put = (wrap, k, i) => {
     const list = (k === 'a' ? docv.bm.a : docv.bm.p)[i] || [];
     wrap.insertAdjacentHTML('beforeend', `<div class="bmlayer" data-act="bmadd" data-k="${k}" data-i="${i}"></div>` +
-      list.map((m, x) => `<button class="bmt ${m.u ? 'u' : ''}" data-act="bmedit" data-k="${k}" data-i="${i}" data-x="${x}" style="top:${(m.y*100).toFixed(2)}%">${m.n}${m.u ? '?' : ''}</button>`).join(''));
+      list.map((m, x) => `<button class="bmt ${sus.has(m) ? 'u' : ''}" data-act="bmedit" data-k="${k}" data-i="${i}" data-x="${x}" style="top:${(m.y*100).toFixed(2)}%">${m.n}${sus.has(m) ? '?' : ''}</button>`).join(''));
   };
   document.querySelectorAll('#docq .pg:not(.note), #padProb .pg').forEach(w => put(w, 'p', +w.dataset.i));
   document.querySelectorAll('#padAns .anspg').forEach(w => put(w, 'a', +w.dataset.j));
@@ -3508,7 +3595,7 @@ function bmAdd(b, e){
   const before = bmPane(pane).filter(v => v.i < i || (v.i === i && v.m.y < y)).pop();
   const v = prompt(`${ROLE[pane]}：ここは問題何番？`, before ? before.m.n + 1 : 1); if(v == null) return;
   const n = parseInt(toNum(v), 10); if(!(n >= 1)) return;
-  const store = k === 'a' ? docv.bm.a : docv.bm.p; (store[i] = store[i] || []).push({y, n}); store[i].sort((a, c) => a.y - c.y);
+  const store = k === 'a' ? docv.bm.a : docv.bm.p; (store[i] = store[i] || []).push({y, n, c:true}); store[i].sort((a, c) => a.y - c.y);
   saveBm(); renderBm();
 }
 function bmEdit(b){
@@ -3516,22 +3603,120 @@ function bmEdit(b){
   const list = (b.dataset.k === 'a' ? docv.bm.a : docv.bm.p)[+b.dataset.i], m = list[+b.dataset.x];
   const v = prompt('問題番号を直す（空にして OK で削除）', m.n); if(v == null) return;
   const n = parseInt(toNum(v) ?? '', 10);
-  if(v.trim() === '') list.splice(+b.dataset.x, 1); else if(n >= 1){ m.n = n; delete m.u; } else return;
+  if(v.trim() === '') list.splice(+b.dataset.x, 1); else if(n >= 1){ m.n = n; m.c = true; delete m.u; delete m.lo; learnMarker(m); } else return;
   saveBm(); renderBm();
 }
 async function bmAuto(){
   if(!docv) return;
-  const has = bmNumbers().length > 0;
-  if(has && !confirm('問題番号を写真から探し直しますか？（いまの番号のしおりは置きかえます）')) return;
-  const dv = docv;
+  if(bmNumbers().length && !confirm('問題番号を写真から読み取り直しますか？（いまの番号は置きかえます）')) return;
+  const dv = docv, hd = document.querySelector('#modal.show .sheet h2');
   try{
-    const r = await detectDoc(dv.d, {p:{}, a:{}}, t => toast(t));
+    const r = await detectDoc(dv.d, {p:{}, a:{}}, t => hd ? hd.textContent = '⏳ ' + t : toast(t));
     if(docv !== dv) return;
     dv.bm = r.bm; saveBm(); renderBm();
-    const nums = bmNumbers();
-    toast(r.found ? `${r.found}か所に番号を付けました。「?」つきは確認してください` : '番号の四角が見つかりませんでした。見出しをタップして手で追加できます');
-    if(nums.length && !dv.bmEdit) goBm(nums[0]);
+    if(!r.found) toast('番号の四角が見つかりませんでした。「ページ上で追加」で手で付けられます');
+    bmr = null; bmReview();
   }catch(e){ console.warn(e); toast('番号を探せませんでした'); }
+}
+
+/* ---------- 番号チェック画面：あやしい番号だけを抜き出して、まとめて直す ---------- */
+let bmr = null;   // {filter:'sus'|'all', sel:'p:3:1', buf:''}
+function bmAll(){ return ['prob','sheet','ans'].flatMap(p => bmPane(p).map(v => ({...v, pane:p, id:`${v.k}:${v.i}:${(v.k === 'a' ? docv.bm.a : docv.bm.p)[v.i].indexOf(v.m)}`}))); }
+function bmSuspects(){   // どれが「あやしい」か：自信なし／順番がおかしい／連番が飛んでいる／問題編にない番号
+  const sus = new Map(), probNums = new Set(bmPane('prob').map(v => v.m.n)), probMax = Math.max(0, ...probNums);
+  for(const pane of ['prob','sheet','ans']){
+    const list = bmPane(pane);
+    list.forEach((v, i) => { const m = v.m, prev = i ? list[i-1].m.n : null; let why = null;
+      if(m.c) return;
+      if(m.u || m.lo) why = '読み取りに自信なし';
+      else if(prev != null && m.n <= prev) why = '順番がおかしい';
+      else if(pane !== 'sheet' && prev != null && m.n !== prev + 1) why = `${prev + 1} が抜けている？`;
+      else if(pane === 'sheet' && m.n < probMax && !probNums.has(m.n)) why = '問題編にない番号';
+      if(why) sus.set(m, why); });
+  }
+  return sus;
+}
+// 覚えた数字の形で、まだ確かめていない番号を読み直す
+function bmReread(){
+  for(const pane of ['prob','sheet','ans']){
+    const list = bmPane(pane).map(v => v.m);
+    list.forEach(m => { if(m.c || !m.g || !m.g.length) return; const r = classifyGlyphs(m.g.map(s2g)); m.n = r ? r.n : null; m.alt = r ? r.alt : null; delete m.lo; if(r && r.gap < 0.05) m.lo = true; });
+    fixSeq(list, pane !== 'sheet');
+  }
+}
+function bmReview(){
+  if(!docv) return;
+  if(docv.bmEdit) bmToggle(false);
+  const all = bmAll();
+  bmr = bmr || {filter: bmSuspects().size ? 'sus' : 'all', sel:null, buf:''};
+  bmrRender();
+  document.getElementById('modal').classList.add('show');
+}
+function bmrRender(){
+  if(!docv || !bmr) return;
+  const all = bmAll(), sus = bmSuspects(), nSus = all.filter(v => sus.has(v.m)).length, noThumb = all.some(v => !v.m.t && !v.m.c);
+  const shown = bmr.filter === 'sus' ? all.filter(v => sus.has(v.m) || v.id === bmr.sel) : all;
+  if(bmr.sel && !shown.some(v => v.id === bmr.sel)) bmr.sel = null;
+  const card = v => { const m = v.m, why = sus.get(m), sel = v.id === bmr.sel;
+    return `<button class="bmc ${why ? 'sus' : ''} ${m.c ? 'ok' : ''} ${sel ? 'sel' : ''}" data-act="bmrsel" data-id="${v.id}">
+      ${m.t ? `<img src="${m.t}" alt="">` : '<span class="noimg">写真なし</span>'}
+      <b>${sel && bmr.buf ? esc(bmr.buf) + '<i>▏</i>' : m.n}${m.c ? ' <em>✓</em>' : ''}</b>${why ? `<small>${why}</small>` : ''}</button>`; };
+  const sec = pane => { const l = shown.filter(v => v.pane === pane); return l.length ? `<p class="label" style="margin:12px 0 6px">${ROLE[pane]}（${all.filter(v => v.pane === pane).length}か所）</p><div class="bmgrid">${l.map(card).join('')}</div>` : ''; };
+  const box = document.querySelector('#modal') ; let sheet = box.querySelector('.sheet');
+  if(!sheet || !sheet.classList.contains('bmrsheet')){ box.innerHTML = '<div class="sheet bmrsheet"></div>'; sheet = box.querySelector('.sheet'); }
+  const top = sheet.querySelector('.bmrbody')?.scrollTop || 0;
+  sheet.innerHTML = `<div class="bmrbody"><h2>🔖 問題番号のチェック</h2>
+    <p class="sub" style="margin:0 0 8px">写真の番号と、その下の数字（読み取った番号）を見くらべて、<b>ちがうものをタップ → 正しい番号を押す</b>だけ。直すたびに数字の形を覚えて、ほかの番号も読み直します。</p>
+    <div class="seg" style="margin-bottom:4px"><button class="${bmr.filter==='sus'?'on':''}" data-act="bmrfilter" data-v="sus">あやしいものだけ（${nSus}）</button><button class="${bmr.filter==='all'?'on':''}" data-act="bmrfilter" data-v="all">すべて（${all.length}）</button></div>
+    ${noThumb ? `<p class="trap" style="margin:8px 0 0"><span>写真の切り抜きがありません</span>前のバージョンで付けた番号です。<button class="mini" data-act="bmauto">写真から読み取り直す</button> と、切り抜きつきで確認できます。</p>` : ''}
+    ${!all.length ? '<p class="sub center" style="margin:20px 0">番号がまだありません。「写真から読み取り直す」か「ページ上で追加」を使ってください。</p>'
+      : !shown.length ? '<p class="center" style="margin:20px 0;font-weight:700">あやしい番号はありません 🎉<br><span class="sub" style="font-weight:400">念のため「すべて」でも確認できます</span></p>'
+      : ['prob','sheet','ans'].map(sec).join('')}
+    </div>
+    <div class="bmpad">${bmr.sel ? `<div class="bmkeys">${[1,2,3,4,5,6,7,8,9,0].map(d => `<button class="ck" data-act="bmrkey" data-k="${d}">${d}</button>`).join('')}<button class="ck fn" data-act="bmrkey" data-k="←">←</button><button class="ck fn cl" data-act="bmrkey" data-k="del">番号を消す</button><button class="ck eq" data-act="bmrkey" data-k="ok">${bmr.buf ? '決定 →' : '合っている →'}</button></div>` : '<p class="sub center" style="margin:6px 0">直したい番号をタップしてください</p>'}
+      <div class="actions" style="margin-top:8px"><button class="btn ghost" data-act="bmrpage">ページ上で追加</button><button class="btn ghost" data-act="bmauto">読み取り直す</button><button class="btn primary" data-act="bmrclose">完了</button></div></div>`;
+  sheet.querySelector('.bmrbody').scrollTop = top;
+  sheet.querySelector('.bmc.sel')?.scrollIntoView({block:'nearest'});
+}
+function bmrGet(id){ const [k, i, x] = id.split(':'), list = (k === 'a' ? docv.bm.a : docv.bm.p)[+i]; return {list, x:+x, m:list && list[+x]}; }
+function bmrCommit(){   // 入力中の数字を確定。その番号から数字の形を覚えて、ほかを読み直す
+  if(!bmr || !bmr.sel) return;
+  const {m} = bmrGet(bmr.sel); if(!m) return;
+  const n = parseInt(bmr.buf, 10);
+  if(bmr.buf && n >= 1){ m.n = n; }
+  m.c = true; delete m.u; delete m.lo; bmr.buf = '';
+  if(learnMarker(m)) bmReread();
+  saveBm();
+}
+function bmrNext(fromId){   // 次のあやしい番号（なければ次の番号）へ
+  const all = bmAll(), sus = bmSuspects(), i = all.findIndex(v => v.id === fromId);
+  const rest = [...all.slice(i + 1), ...all.slice(0, Math.max(i, 0))];
+  const nx = rest.find(v => sus.has(v.m)) || (bmr.filter === 'all' ? rest.find(v => !v.m.c) : null);
+  bmr.sel = nx ? nx.id : null;
+}
+function bmrKey(k){
+  if(!bmr || !bmr.sel) return;
+  if(/^\d$/.test(k)){ if(bmr.buf.length < 3) bmr.buf = (bmr.buf === '0' ? '' : bmr.buf) + k; }
+  else if(k === '←') bmr.buf = bmr.buf.slice(0, -1);
+  else if(k === 'ok'){ const id = bmr.sel; bmrCommit(); bmrNext(id); }
+  else if(k === 'del'){ const {list, x} = bmrGet(bmr.sel), all = bmAll(), i = all.findIndex(v => v.id === bmr.sel), nx = all[i + 1]; list.splice(x, 1); bmr.buf = '';
+    // 同じページの後ろの番号は1つずつ前にずれる
+    bmr.sel = null; if(nx){ const [k2, i2, x2] = nx.id.split(':'), [k1, i1] = all[i].id.split(':'); bmr.sel = (k1 === k2 && i1 === i2) ? `${k2}:${i2}:${+x2 - 1}` : nx.id; }
+    bmReread(); saveBm(); }
+  bmrRender(); buzz(6);
+}
+function bmrSelect(id){
+  if(!bmr) return;
+  if(bmr.sel && bmr.sel !== id && bmr.buf) bmrCommit();   // 入力途中でほかをタップしたら、そこまでを確定
+  bmr.sel = bmr.sel === id && !bmr.buf ? null : id; bmr.buf = '';
+  bmrRender();
+}
+function bmrClose(){
+  if(bmr && bmr.sel && bmr.buf) bmrCommit();
+  bmr = null; closeModal();
+  if(!docv) return;
+  renderBm();
+  const nums = bmNumbers(); if(nums.length) goBm(nums.includes(docv.bmCur) ? docv.bmCur : nums[0], false);
 }
 
 /* ---------- 問題セットをファイルにして、ほかの端末（iPhone → iPad など）に送る ----------
@@ -3714,7 +3899,7 @@ function renderSettings(){
       <ol class="help">
         <li><b>📝 問題を解く</b>：Apple Pencil で問題用紙に計算を書き込み、解答欄に直接答えを書いて採点します。「⌨️ 入力」にすると数字を入力して自動採点</li>
         <li><b>⏱ 模擬試験</b>：90分・100点で第1〜5問を通しで解き、70点の合格ラインを判定。途中で閉じても再開できます</li>
-        <li><b>📷 教科書・過去問</b>：問題・解答用紙・解答の写真を章ごとにまとめて取り込み、書き込んで解けます。問題番号は写真から自動で読み取り、番号を選ぶと問題・解答用紙・解答がそろって移動します（ずれていたら「🔖 番号」で直せます）。○△×のスタンプで採点し、「次の×△」で解き直し</li>
+        <li><b>📷 教科書・過去問</b>：問題・解答用紙・解答の写真を章ごとにまとめて取り込み、書き込んで解けます。問題番号は写真から自動で読み取り、番号を選ぶと問題・解答用紙・解答がそろって移動します（「🔖 番号」のチェック画面で、あやしい番号だけをまとめて直せます。直すたびに数字の形を覚えます）。○△×のスタンプで採点し、「次の×△」で解き直し</li>
       </ol>
       <p class="label" style="margin-top:12px">便利な機能</p>
       <ol class="help">
@@ -4121,6 +4306,12 @@ const ACT = {
   docbad: () => docNextBad(),
   bmstep: b => bmStep(+b.dataset.v),
   bmtoggle: () => bmToggle(),
+  bmreview: () => { bmr = null; bmReview(); },
+  bmrfilter: b => { if(bmr){ bmr.filter = b.dataset.v; bmrRender(); } },
+  bmrsel: b => bmrSelect(b.dataset.id),
+  bmrkey: b => bmrKey(b.dataset.k),
+  bmrclose: () => bmrClose(),
+  bmrpage: () => { bmrClose(); bmToggle(true); },
   bmadd: (b, e) => bmAdd(b, e),
   bmedit: b => bmEdit(b),
   bmauto: () => bmAuto(),
