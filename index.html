@@ -584,6 +584,16 @@ body.pad-ans #pad .padhead{justify-content:space-between}
   .prow .pn{flex-basis:96px}
   .pnote{margin-left:106px}
 }
+
+.tool.stp{font-size:18px;font-weight:800;padding:0;min-width:36px}
+.tool.stp.o{color:#16a34a} .tool.stp.s{color:#d97706} .tool.stp.x{color:#dc2626}
+.stps{display:inline-flex;gap:4px;padding-left:6px;margin-left:2px;border-left:1.5px solid var(--line)}
+.qnav{flex-wrap:wrap}
+.qmulti{display:flex;gap:6px;align-items:center;flex:1 1 260px;min-width:0}
+.qnav.single .qmulti{display:none}
+.stsum{font-weight:800;font-size:14px;margin-left:auto;white-space:nowrap}
+.qnav.single .stsum{margin-left:0;flex:1}
+.stsum .sub{font-weight:500}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -2831,7 +2841,7 @@ function renderExams(){
     <div class="card"><h2>🏭 工業簿記（第4問・第5問）</h2>${grp('工業', ['第4問','第5問'])}</div>
     </div><div class="hC">
     <div class="card" id="mydocs"><h2>📷 教科書・過去問の写真に書き込む</h2>
-      <p class="sub" style="margin:0 0 10px">教科書・問題集・過去問の<b>問題・解答用紙・解答</b>の写真（PDFも可）を1問ずつセットで取り込めます。解答用紙に Apple Pencil で書き、問題は横に表示、「📖 解答」で答え合わせ → 1問ごとに ○△× をつけて、×と△だけ解き直せます。データはこのiPadの中だけに保存されます。</p>
+      <p class="sub" style="margin:0 0 10px">教科書・問題集・過去問の<b>問題・解答用紙・解答</b>の写真（PDFも可）を、章ごとにまとめて取り込めます。解答用紙に Apple Pencil で書き、問題は横に表示、「📖 解答」で答え合わせ。問題番号の横に <b>○△× のスタンプ</b>を押して採点し、「次の×△」で解き直す場所へ飛べます。データはこの端末の中だけに保存されます。</p>
       <button class="btn primary" data-act="wiznew0">＋ 問題を取り込む（写真・PDF）</button>
       <label class="btn filebtn" style="margin-top:8px">📥 共有ファイルから取り込む（.boki2）<input type="file" id="setfile" hidden></label>
       <p class="sub" style="margin:8px 0 0;font-size:12px">iPhone で撮って取り込んだ問題は、一覧の 📤 から AirDrop などで iPad に送れます（書き込みと○△×も一緒に送られます）。</p>
@@ -2905,6 +2915,14 @@ function markSummary(m, n){
   const done = c.o + c.s + c.x;
   return done ? `<span class="r-good">○${c.o}</span> <span class="r-mid">△${c.s}</span> <span class="r-bad">×${c.x}</span>${done < n ? `・未${n-done}` : ''}` : '未着手';
 }
+const stampCount = strokes => { const c = {o:0, s:0, x:0}; let n = 0; (strokes || []).forEach(k => { if(k.st && c[k.st] !== undefined){ c[k.st]++; n++; } }); return n ? c : null; };
+const stampTotals = m => { const t = {o:0, s:0, x:0}; Object.values((m && m.st) || {}).forEach(c => { t.o += c.o; t.s += c.s; t.x += c.x; }); return t; };
+const stampHTML = t => `<span class="r-good">○${t.o}</span> <span class="r-mid">△${t.s}</span> <span class="r-bad">×${t.x}</span>`;
+function docSummary(m, n){
+  const t = stampTotals(m), hasSt = t.o + t.s + t.x > 0, qm = Object.keys(m).some(k => k !== 'st');
+  if(n > 1 || qm) return `${n}問・${markSummary(m, n)}${hasSt ? `／スタンプ ${stampHTML(t)}` : ''}`;
+  return hasSt ? `1セット・${stampHTML(t)}` : '1セット・未着手';
+}
 /* 1問 ＝ 問題（prob）・解答用紙（sheet）・解答（ans）のセット
    doc.v=2：pages[i] = {blob,w,h, role:'prob'|'sheet', q}、ans[i] = {blob,w,h, q}
    旧形式（v なし）：1ページ＝1問、解答は全問共通 */
@@ -2931,7 +2949,7 @@ async function renderDocList(){
   if(!document.getElementById('doclist')) return;
   box.innerHTML = docs.length ? docs.map((d, i) => { const n = docItems(d).length;
     return `<div class="docrow"><button class="exrow" data-act="docopen" data-id="${d.id}">
-      <span class="exl"><b>📄 ${esc(d.name)}</b><small>${n}問・${markSummary(marks[i], n)}</small></span><span class="exs">›</span></button>
+      <span class="exl"><b>📄 ${esc(d.name)}</b><small>${docSummary(marks[i], n)}</small></span><span class="exs">›</span></button>
       <button class="link" data-act="docshare" data-id="${d.id}" aria-label="ほかの端末に送る">📤</button>
       <button class="link" data-act="docdel" data-id="${d.id}" aria-label="削除">🗑</button></div>`; }).join('')
     : '<p class="sub" style="margin:10px 0 0">まだありません。教科書・問題集の 問題・解答用紙・解答 の写真を取り込みましょう。</p>';
@@ -2952,7 +2970,7 @@ function importError(e){
 /* ---------- 取り込み（1問ずつ／まとめて） ---------- */
 let wiz = null;
 function openWizard(docId, q){
-  wiz = {docId, q, files:{prob:[], sheet:[], ans:[]}, bulk:[], group:3, base: docId && docv && docv.id === docId ? docv.items.length : 0};
+  wiz = {docId, q, files:{prob:[], sheet:[], ans:[]}, bulk:[], group:3, split:'set', base: docId && docv && docv.id === docId ? docv.items.length : 0};
   const pick = (r, req) => `<label class="pickrow"><span class="pr-l"><b>${r==='prob'?'①':r==='sheet'?'②':'③'} ${ROLE[r]}</b><small>${req ? '必須' : 'なければ空のままでOK'}</small></span>
     <span class="pr-c" id="wc-${r}">未選択</span><span class="mini">選ぶ</span><input type="file" class="wizfile" data-role="${r}" accept="application/pdf,image/*" multiple hidden></label>`;
   const addTo = q != null;
@@ -2960,9 +2978,12 @@ function openWizard(docId, q){
     ${!docId ? `<input class="wizname" id="wizname" placeholder="名前（例：テキスト第3章、予想問題 第1回）" autocomplete="off">` : ''}
     ${addTo ? '' : '<div class="wseg seg"><button class="on" data-act="wizmode" data-v="one">種類ごとに選ぶ<br><small>おすすめ</small></button><button data-act="wizmode" data-v="bulk">順番に並んだ写真<br><small>問題→解答用紙→解答…</small></button></div>'}
     <div id="wiz-one">
-      <p class="sub" style="margin:0 0 8px">${addTo ? 'この問題に足す写真を、種類ごとに選んでください。' : '<b>問題・解答用紙・解答を、それぞれまとめて</b>選んでください（何問ぶんでも一度に。PDFもOK）。次の画面で自動的に問題ごとに分けます。'}</p>
+      <p class="sub" style="margin:0 0 8px">${addTo ? 'この問題に足す写真を、種類ごとに選んでください。' : '<b>1章ぶんの 問題・解答用紙・解答 を、それぞれまとめて</b>選んでください（写真は何枚でも。PDFもOK）。'}</p>
       ${pick('prob', !addTo)}${pick('sheet')}${pick('ans')}
-      <button class="btn primary" data-act="wizgo" style="margin-top:12px">${addTo ? '追加する' : '次へ（問題ごとに分ける）'}</button>
+      ${addTo ? '' : `<p class="label" style="margin:12px 0 6px">分け方</p>
+      <div class="seg" style="margin:0"><button class="on" data-act="wizsplit" data-v="set">まるごと1セット<br><small>1ページに何問もある本（おすすめ）</small></button><button data-act="wizsplit" data-v="page">1ページ＝1問に分ける<br><small>1問ずつ別のページの本</small></button></div>
+      <p class="sub" style="margin:6px 0 0;font-size:12px">まるごと1セットなら、分ける作業はいりません。解くときに、問題番号の横へ ○△× のスタンプを押して採点します。</p>`}
+      <button class="btn primary" data-act="wizgo" style="margin-top:12px">${addTo ? '追加する' : '取り込む'}</button>
       ${addTo ? '' : '<p class="sub" style="margin:8px 0 0;font-size:12px">💡 iPhone の「ファイル」アプリ →「…」→「書類をスキャン」で撮ると、自動で傾きを直したPDFになり、選ぶのも1ファイルで済みます。</p>'}
     </div>
     <div id="wiz-bulk" hidden>
@@ -3004,8 +3025,8 @@ async function wizKind(){
     for(const r of ['prob','sheet','ans']) roles[r] = f[r].length ? await filesToPages(f[r], t => st(`${ROLE[r]}：${t}`)) : [];
     rev = {docId:w.docId, name, roles, base:w.base};
     wiz = null;
-    // どの種類も1枚以下なら、分けるまでもなく1問
-    if(Object.values(roles).every(a => a.length <= 1)) return revSave();
+    // まるごと1セット（または、どの種類も1枚以下）なら、分けずにそのまま保存
+    if(w.split !== 'page' || Object.values(roles).every(a => a.length <= 1)){ Object.values(roles).forEach(a => a.forEach((p, i) => p.cont = i > 0)); return revSave(); }
     revRender();
   }catch(e){ importError(e); rev = null; closeModal(); }
 }
@@ -3042,7 +3063,7 @@ async function revSave(){
     }
     await DB.putDoc(d);
     rev = null; closeModal();
-    toast(`${n}問取り込みました`);
+    toast(n === 1 ? '取り込みました。解いたら ○△× スタンプで採点しよう' : `${n}問取り込みました`);
     openDoc(d.id, {q:q0});
   }catch(e){ importError(e); }
 }
@@ -3078,6 +3099,7 @@ function flushDocInk(){ if(docv) Object.values(docv.pending).forEach(f => f()); 
 function clearDocQ(){
   if(!docv) return;
   flushDocInk();
+  docv.io?.forEach(o => o.disconnect()); docv.io = null;
   INKS.doc?.destroy(); delete INKS.doc;
   document.getElementById('padProb').innerHTML = '';
   document.getElementById('padAns').innerHTML = '';
@@ -3091,7 +3113,11 @@ function closeDoc(){
   docv = null;
 }
 function setPadTab(v){
+  // タブを切り替えても、問題・解答のスクロール位置を覚えておく
+  const els = ['padProb','padAns'].map(id => document.getElementById(id)).filter(Boolean);
+  els.forEach(el => { if(el.offsetParent) el.dataset.st = el.scrollTop; });
   ['ans','calc','prob'].forEach(t => document.body.classList.toggle('pad-'+t, v === t));
+  els.forEach(el => { if(el.offsetParent && el.dataset.st) el.scrollTop = +el.dataset.st; });
   document.querySelectorAll('#pad .padtabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
 }
 function openPad(tab){
@@ -3122,11 +3148,12 @@ async function openDoc(id, opt = {}){
   view.innerHTML = `
     <div class="qhead exhead"><div class="qtop"><button class="homebtn" data-act="home">← 一覧</button>
       <div class="qtop-r"><span class="prog doctitle">${esc(d.name)}</span><button class="homebtn ansbtn" data-act="docans"></button>${padBtnHTML()}</div></div>
-      <div class="qnav"><button class="tool" data-act="docq" data-v="-1" aria-label="前の問題">◀</button>
+      <div class="qnav"><span class="qmulti"><button class="tool" data-act="docq" data-v="-1" aria-label="前の問題">◀</button>
         <select id="docqsel" aria-label="問題を選ぶ"></select>
         <button class="tool" data-act="docq" data-v="1" aria-label="次の問題">▶</button>
-        <button class="tool filtbtn" data-act="docfilter" aria-label="○以外だけ">×△だけ</button></div>
-      <div class="extools">${inkBarHTML('doc')}<button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋<span class="lb"> 指で書く</span></button></div></div>
+        <button class="tool filtbtn" data-act="docfilter" aria-label="○以外だけ">×△だけ</button></span>
+        <span class="stsum" id="stsum"></span><button class="tool" data-act="docbad" aria-label="次の×△のスタンプへ">次の×△ ↓</button></div>
+      <div class="extools">${inkBarHTML('doc', true)}<button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋<span class="lb"> 指で書く</span></button></div></div>
     <div id="docq"></div>
     <div class="docadd">
       <button class="btn" data-act="wizadd">＋ この問題にページを追加</button>
@@ -3143,14 +3170,35 @@ function inkPage(i, wrap){
   const save = () => { clearTimeout(dv.timers[i]); delete dv.pending[i]; return DB.putInk(key, k.strokes).catch(() => toast('書き込みを保存できませんでした')); };
   const k = new Ink(wrap, {name:'doc', norm:true, scroll:true, paper:true, width:2.8, tool:g.tool,
     onDown: () => { g.cur = i; }, onPush: () => g.pushed(i),
-    onChange: () => { if(docv !== dv) return; dv.cache[i] = k.strokes; clearTimeout(dv.timers[i]); dv.pending[i] = save; dv.timers[i] = setTimeout(save, 400); }});
+    onChange: () => { if(docv !== dv) return; dv.cache[i] = k.strokes; clearTimeout(dv.timers[i]); dv.pending[i] = save; dv.timers[i] = setTimeout(save, 400);
+      // スタンプの数を集計しておく（一覧と上の集計に表示）
+      const st = dv.marks.st = dv.marks.st || {}, c = stampCount(k.strokes);
+      if(JSON.stringify(st[i] || null) !== JSON.stringify(c)){ if(c) st[i] = c; else delete st[i]; DB.putInk(dv.id+':marks', dv.marks).catch(() => {}); updateStampSum(); } }});
+  k.sleep();   // 画面の近くに来たら canvas を用意する（iPad のメモリ対策）
   g.add(i, k);
   if(dv.cache[i]){ k.strokes = dv.cache[i]; k.redraw(); }
   else DB.ink(key).then(st => { if(st && st.length && docv === dv){ dv.cache[i] = st; if(!k.strokes.length){ k.strokes = st; k.redraw(); } } }).catch(() => {});
   return k;
 }
 const pageHTML = (i, label) => { const p = docv.d.pages[i];
-  return `<div class="pgwrap"><div class="inkwrap pg" data-i="${i}" style="aspect-ratio:${p.w}/${p.h}"><img src="${docv.urls[i]}" alt="${label}" draggable="false"></div></div>`; };
+  return `<div class="pgwrap"><div class="inkwrap pg" data-i="${i}" style="aspect-ratio:${p.w}/${p.h}"><img src="${docv.urls[i]}" alt="${label}" draggable="false" loading="lazy" decoding="async"></div></div>`; };
+function updateStampSum(){
+  const el = document.getElementById('stsum'); if(!el || !docv) return;
+  const t = stampTotals(docv.marks);
+  el.innerHTML = t.o + t.s + t.x ? stampHTML(t) : '<span class="sub">○△×スタンプで採点</span>';
+}
+function docNextBad(){
+  const g = INKS.doc; if(!g || !docv) return;
+  const ys = [];
+  view.querySelectorAll('#docq .pg').forEach(w => { const i = +w.dataset.i, r = w.getBoundingClientRect(), st = g.pages[i]?.strokes.length ? g.pages[i].strokes : (docv.cache[i] || []);
+    st.forEach(k => { if(k.st === 'x' || k.st === 's') ys.push(r.top + window.scrollY + k.y * r.width / 1000); }); });
+  if(!ys.length){ toast('このページに ×・△ のスタンプはありません'); return; }
+  ys.sort((a, b) => a - b);
+  const head = (view.querySelector('.exhead')?.offsetHeight || 150) + 40, now = window.scrollY + head;
+  let y = ys.find(v => v > now + 24);
+  if(y === undefined){ y = ys[0]; toast('最初の ×・△ に戻りました'); }
+  window.scrollTo({top:Math.max(0, y - head), behavior:'smooth'});
+}
 function showDocQ(qi){
   if(!docv) return;
   clearDocQ();
@@ -3171,10 +3219,15 @@ function showDocQ(qi){
   document.body.classList.toggle('has-ans', it.ans.length > 0);
   document.getElementById('padProb').innerHTML = hasSheet ? `<div class="zwrap" style="width:${docv.zoom*100}%">${it.prob.map(i => pageHTML(i, '問題')).join('')}</div>` : '';
   document.getElementById('padAns').innerHTML = `<div class="zwrap" style="width:${docv.zoom*100}%">${it.ans.map((j, k) => { const p = docv.d.ans[j];
-    return `<img src="${docv.ansUrls[j]}" alt="解答${k+1}" style="aspect-ratio:${p.w}/${p.h}"><p class="pgno">解答 ${k+1} / ${it.ans.length}</p>`; }).join('')}</div>`;
+    return `<img src="${docv.ansUrls[j]}" alt="解答${k+1}" loading="lazy" decoding="async" style="aspect-ratio:${p.w}/${p.h}"><p class="pgno">解答 ${k+1} / ${it.ans.length}</p>`; }).join('')}</div>`;
   const g = new InkGroup('doc'); INKS.doc = g;
-  view.querySelectorAll('#docq .pg').forEach(w => inkPage(+w.dataset.i, w));
-  document.querySelectorAll('#padProb .pg').forEach(w => inkPage(+w.dataset.i, w));
+  const io = root => new IntersectionObserver(es => es.forEach(e => { const k = INKS.doc === g && g.pages[+e.target.dataset.i]; if(!k) return; e.isIntersecting ? k.wake() : (k.cur || k.sleep()); }), {root, rootMargin:'1000px 0px'});
+  docv.io = [io(null), io(document.getElementById('padProb'))];
+  view.querySelectorAll('#docq .pg').forEach(w => { inkPage(+w.dataset.i, w); docv.io[0].observe(w); });
+  document.querySelectorAll('#padProb .pg').forEach(w => { inkPage(+w.dataset.i, w); docv.io[1].observe(w); });
+  ['padProb','padAns'].forEach(id => delete document.getElementById(id).dataset.st);
+  view.querySelector('.qnav').classList.toggle('single', n === 1);
+  updateStampSum();
   g.cur = main[0] ?? 0;
   syncBar('doc');
   // 次の問題に進んだら、解答はいったん隠す（ネタバレ防止）
@@ -3213,12 +3266,11 @@ function toggleDocFilter(){
   if(!left.includes(docv.qi)) showDocQ(left[0]);
 }
 function clearPage(){
-  const g = INKS.doc, k = g?.pages[g.cur];
-  const any = g && g.pages.some(p => p && p.strokes.length);
-  if(!any){ toast('この問題に書き込みはありません'); return; }
-  if(!confirm('この問題の書き込み（解答用紙・問題とも）を消しますか？')) return;
-  g.pages.forEach((p, i) => { if(p && p.strokes.length){ g.cur = i; p.clear(); } });
-  toast('書き込みを消しました（↶で戻せます）');
+  const g = INKS.doc; if(!g) return;
+  if(!g.pages.some(p => p && p.strokes.some(k => !k.st))){ toast('書き込みはありません'); return; }
+  if(!confirm('書き込みを消しますか？（○△×スタンプは残ります。↶で戻せます）')) return;
+  g.pages.forEach((p, i) => { if(p){ g.cur = i; p.clearInk(); } });
+  toast('書き込みを消しました。×・△の問題を解き直そう');
 }
 
 /* ---------- 問題セットをファイルにして、ほかの端末（iPhone → iPad など）に送る ----------
@@ -3398,7 +3450,7 @@ function renderSettings(){
       <ol class="help">
         <li><b>📝 問題を解く</b>：Apple Pencil で問題用紙に計算を書き込み、解答欄に直接答えを書いて採点します。「⌨️ 入力」にすると数字を入力して自動採点</li>
         <li><b>⏱ 模擬試験</b>：90分・100点で第1〜5問を通しで解き、70点の合格ラインを判定。途中で閉じても再開できます</li>
-        <li><b>📷 教科書・過去問</b>：問題・解答用紙・解答の写真を1問ずつセットで取り込み、書き込んで解けます</li>
+        <li><b>📷 教科書・過去問</b>：問題・解答用紙・解答の写真を章ごとにまとめて取り込み、書き込んで解けます。○△×のスタンプで採点し、「次の×△」で解き直し</li>
       </ol>
       <p class="label" style="margin-top:12px">便利な機能</p>
       <ol class="help">
@@ -3499,6 +3551,11 @@ class Ink {
     this.pid = e.pointerId;
     this.opt.onDown?.();
     const p = this.pt(e);
+    if(this.tool.startsWith('st:') && !(e.buttons & 32)){   // ○△×スタンプ：タップした場所に押す
+      const st = {st:this.tool.slice(3), x:p.x, y:p.y};
+      this.push(this.strokes.slice()); this.strokes.push(st); this.stamp(this.ctx, st); this.changed(); buzz(8);
+      return;
+    }
     if(this.tool === 'eraser' || (e.buttons & 32)){ this.cur = {erase:true, before:this.strokes.slice()}; this.eraseAt(p); }
     else { this.cur = {c:this.tool, w:this.base, pts:[p]}; this.colors = this.palette(); this.strokes.push(this.cur); this.dot(this.cur); }
   }
@@ -3545,6 +3602,7 @@ class Ink {
     const ctx = this.ctx; this.colors = this.palette();
     ctx.clearRect(0, 0, this.w, this.h);
     for(const s of this.strokes){
+      if(s.st){ this.stamp(ctx, s); continue; }
       if(s.pts.length === 1){ const p = s.pts[0]; this.style(ctx, s); ctx.beginPath(); ctx.arc(p.x, p.y, this.width(s, p.p)/2, 0, Math.PI*2); ctx.fill(); continue; }
       for(let i = 1; i < s.pts.length; i++) this.seg(ctx, s, i);
       if(s !== this.cur) this.tail(ctx, s);
@@ -3553,6 +3611,7 @@ class Ink {
   eraseAt(p){
     const R = 12/this.s, before = this.strokes.length;
     this.strokes = this.strokes.filter(s => {
+      if(s.st) return Math.hypot(p.x - s.x, p.y - s.y) > R + 16;
       const P = s.pts;
       if(P.length === 1) return Math.hypot(p.x - P[0].x, p.y - P[0].y) > R;
       for(let i = 1; i < P.length; i++) if(distSeg(p, P[i-1], P[i]) <= R + s.w) return false;
@@ -3560,6 +3619,16 @@ class Ink {
     });
     if(this.strokes.length !== before) this.redraw();
   }
+  stamp(ctx, s){
+    const r = 18, c = {o:'#16a34a', s:'#d97706', x:'#dc2626'}[s.st] || '#dc2626';
+    ctx.strokeStyle = c; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
+    if(s.st === 'o') ctx.arc(s.x, s.y, r, 0, Math.PI*2);
+    else if(s.st === 's'){ ctx.moveTo(s.x, s.y - r); ctx.lineTo(s.x + r*1.05, s.y + r*0.8); ctx.lineTo(s.x - r*1.05, s.y + r*0.8); ctx.closePath(); }
+    else { const d = r*0.8; ctx.moveTo(s.x - d, s.y - d); ctx.lineTo(s.x + d, s.y + d); ctx.moveTo(s.x + d, s.y - d); ctx.lineTo(s.x - d, s.y + d); }
+    ctx.stroke();
+  }
+  // 書き込みだけ消す（○△×スタンプは残す）
+  clearInk(){ const keep = this.strokes.filter(s => s.st); if(keep.length === this.strokes.length) return false; this.push(this.strokes.slice()); this.strokes = keep; this.redraw(); this.changed(); return true; }
   clear(){ if(!this.strokes.length) return; this.push(this.strokes.slice()); this.strokes = []; this.redraw(); this.changed(); }
   undo(){ if(!this.undoS.length) return; this.redoS.push(this.strokes); this.strokes = this.undoS.pop(); this.redraw(); this.changed(); }
   redo(){ if(!this.redoS.length) return; this.undoS.push(this.strokes); this.strokes = this.redoS.pop(); this.redraw(); this.changed(); }
@@ -3588,11 +3657,12 @@ const IC = {
   redo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>',
   trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
 };
-function inkBarHTML(name){
+function inkBarHTML(name, stamps){
   const pen = (op, v, l) => `<button class="tool" data-act="ink" data-op="${op}" aria-label="${l}"><i class="pdot" style="background:var(${v})"></i></button>`;
   return `<div class="inkbar" data-ink="${name}">
     ${pen('ink','--text','黒ペン')}${pen('red','--ng','赤ペン')}${pen('blue','--debit','青ペン')}
     <button class="tool" data-act="ink" data-op="eraser" aria-label="消しゴム">${IC.eraser}</button>
+    ${stamps ? `<span class="stps">${['o','s','x'].map(v => `<button class="tool stp ${v}" data-act="ink" data-op="st:${v}" aria-label="${MK[v].t}のスタンプ">${MK[v].t}</button>`).join('')}</span>` : ''}
     <span class="sp"></span>
     <button class="tool" data-act="ink" data-op="undo" aria-label="元に戻す">${IC.undo}</button>
     <button class="tool" data-act="ink" data-op="redo" aria-label="やり直し">${IC.redo}</button>
@@ -3605,14 +3675,14 @@ function syncBar(name){
     if(!k){ return; }
     bar.querySelectorAll('[data-op]').forEach(b => {
       const op = b.dataset.op;
-      if(op in INK_VARS || op === 'eraser') b.classList.toggle('on', k.tool === op);
+      if(op in INK_VARS || op === 'eraser' || op.startsWith('st:')) b.classList.toggle('on', k.tool === op);
       else b.disabled = op === 'undo' ? !k.undoS.length : op === 'redo' ? !k.redoS.length : !k.strokes.length;
     });
   });
 }
 function inkOp(name, op){
   const k = INKS[name]; if(!k) return;
-  if(op in INK_VARS || op === 'eraser') k.setTool(op);
+  if(op in INK_VARS || op === 'eraser' || op.startsWith('st:')){ k.setTool(op); if(op.startsWith('st:') && !S.seenStampTip){ S.seenStampTip = true; save(); toast('問題番号の横などをタップすると、スタンプを押せます'); } }
   else if(op === 'clear'){ const n = k.strokes.length; k.clear(); if(n) toast(k instanceof InkGroup ? 'このページの書き込みを消しました（↶で戻せます）' : '全部消しました（↶で元に戻せます）'); }
   else k[op]();
 }
@@ -3784,6 +3854,8 @@ const ACT = {
   docshare: b => shareDoc(b.dataset.id),
   tomydocs: () => document.getElementById('mydocs')?.scrollIntoView({behavior:'smooth', block:'start'}),
   docans: () => showAnswers(),
+  docbad: () => docNextBad(),
+  wizsplit: b => { if(!wiz) return; wiz.split = b.dataset.v; b.parentElement.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); document.querySelector('[data-act=wizgo]').textContent = wiz.split === 'page' ? '次へ（問題ごとに分ける）' : '取り込む'; },
   docfilter: () => toggleDocFilter(),
   pmark: b => markPage(b),
   pclear: () => clearPage(),
