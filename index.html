@@ -634,6 +634,15 @@ body.bm-edit .extools{display:none}
 .bmkeys .ck.cl{grid-column:span 3}
 .bmkeys .ck.eq{grid-column:span 5;font-size:16px}
 @media (max-width:520px){ .bmkeys{grid-template-columns:repeat(5,1fr)} .bmkeys .ck.fn{grid-column:span 1} .bmkeys .ck.cl{grid-column:span 2;font-size:12px} .bmkeys .ck.eq{grid-column:span 2;font-size:13px} .bmgrid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))} }
+
+.pgdel{display:none;position:absolute;top:8px;right:8px;z-index:5;border:none;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:800;background:var(--ng);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+body.bm-edit .pgdel{display:block}
+.gapbox{border:1.5px solid var(--ng);background:var(--ng-weak);border-radius:10px;padding:8px 10px;margin:0 0 8px;font-size:13px;font-weight:700}
+.gapbox small{font-weight:500;color:var(--sub);font-size:11px}
+.gapbox.soft{border-color:var(--line);background:var(--bg);font-weight:600;color:var(--sub)}
+.gapchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.gapchip{border:1.5px solid var(--ng);background:var(--card);color:var(--ng);border-radius:999px;padding:5px 12px;font-size:14px;font-weight:800}
+.gapbox.soft .gapchip{border-color:var(--line);color:var(--sub);font-weight:700}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -2970,8 +2979,8 @@ function docItems(d){
   if(d.v !== 2) return d.pages.map((_, i) => ({prob:[i], sheet:[], ans:(d.ans || []).map((_, j) => j)}));
   const n = Math.max(0, ...d.pages.map(p => p.q + 1), ...(d.ans || []).map(a => a.q == null ? 0 : a.q + 1));
   const items = Array.from({length:n}, () => ({prob:[], sheet:[], ans:[]}));
-  d.pages.forEach((p, i) => items[p.q][p.role === 'sheet' ? 'sheet' : 'prob'].push(i));
-  (d.ans || []).forEach((a, j) => { if(a.q == null) items.forEach(it => it.ans.push(j)); else items[a.q].ans.push(j); });
+  d.pages.forEach((p, i) => { if(!p.del) items[p.q][p.role === 'sheet' ? 'sheet' : 'prob'].push(i); });   // 削除した写真（del）は飛ばす
+  (d.ans || []).forEach((a, j) => { if(a.del) return; if(a.q == null) items.forEach(it => it.ans.push(j)); else items[a.q].ans.push(j); });
   return items;
 }
 function toV2(d){
@@ -3203,18 +3212,20 @@ async function openDoc(id, opt = {}){
         <span class="bmnav" id="bmnav"><button class="tool" data-act="bmstep" data-v="-1" aria-label="前の問題へ">◀</button><select id="bmsel" aria-label="問題番号を選ぶ"></select><button class="tool" data-act="bmstep" data-v="1" aria-label="次の問題へ">▶</button></span>
         <button class="tool bmbtn" data-act="bmreview" aria-label="問題番号をチェック・修正">🔖<span class="lb"> 番号</span></button>
         <span class="stsum" id="stsum"></span><button class="tool" data-act="docbad" aria-label="次の×△のスタンプへ">次の×△ ↓</button></div>
-      <div class="bmbar"><span class="sub" style="flex:1">見出しをタップで追加／番号をタップで修正・削除</span><button class="mini" data-act="bmauto">🔍 写真から自動で探す</button><button class="mini" data-act="bmtoggle" style="background:var(--accent);color:var(--accent-text)">完了</button></div>
+      <div class="bmbar"><span class="sub" id="bmbarmsg" style="flex:1"></span><button class="mini" data-act="bmauto">🔍 写真から自動で探す</button><button class="mini" data-act="bmtoggle" style="background:var(--accent);color:var(--accent-text)">完了</button></div>
       <div class="extools">${inkBarHTML('doc', true)}<button class="tool fingerbtn ${S.set.finger?'on':''}" data-act="finger" aria-label="指でも書く">✋<span class="lb"> 指で書く</span></button></div></div>
     <div id="docq"></div>
     <div class="docadd">
       <button class="btn" data-act="wizadd">＋ この問題にページを追加</button>
       <button class="btn" data-act="wiznew">＋ 次の問題を取り込む</button>
+      <button class="btn" data-act="pgdelmode" style="grid-column:1 / -1">🗑 まちがえて取り込んだ写真を削除</button>
     </div>
     <p class="note">書き込みと○△×は自動で保存されます</p>`;
   const qi = Math.min(Math.max(opt.q || 0, 0), docv.items.length - 1);
   showDocQ(qi);
   if(opt.answers) showAnswers();
-  if(opt.review && bmSuspects().size){ bmr = null; bmReview(); }
+  if(opt.review && (bmSuspects().size || bmGapCount())){ bmr = null; bmReview(); }
+  if(opt.edit){ bmToggle(true); if(opt.tab) openPad(opt.tab); }
 }
 function qLabel(i){ const m = docv.marks[i]; return `問${i+1}${m ? ' ' + MK[m.v].t : ''}`; }
 function inkPage(i, wrap){
@@ -3488,6 +3499,7 @@ async function detectDoc(d, bm, prog){
   for(const [pane, list, store] of jobs){
     const fresh = [];
     for(const [pg, i] of list){
+      if(pg.del){ store[i] = []; continue; }
       if(store[i]) continue;
       prog && prog(`問題番号を探しています… ${++done}/${total}ページ`);
       try{ store[i] = await detectPage(pg.blob); }catch(e){ store[i] = []; }
@@ -3523,12 +3535,13 @@ function bmNumbers(){ return [...new Set(['prob','sheet','ans'].flatMap(p => bmP
 function saveBm(){ DB.putInk(docv.id+':bm', docv.bm).catch(() => toast('しおりを保存できませんでした')); }
 function renderBm(){
   if(!docv) return;
-  document.querySelectorAll('.bmt, .bmlayer').forEach(el => el.remove());
+  document.querySelectorAll('.bmt, .bmlayer, .pgdel').forEach(el => el.remove());
   const sus = bmSuspects();
-  document.querySelectorAll('.bmbtn').forEach(b => { b.classList.toggle('warn', sus.size > 0); b.querySelector('.lb').textContent = sus.size ? ` 番号（要確認${sus.size}）` : ' 番号'; });
+  const todo = sus.size + bmGapCount();
+  document.querySelectorAll('.bmbtn').forEach(b => { b.classList.toggle('warn', todo > 0); b.querySelector('.lb').textContent = todo ? ` 番号（要確認${todo}）` : ' 番号'; });
   const put = (wrap, k, i) => {
     const list = (k === 'a' ? docv.bm.a : docv.bm.p)[i] || [];
-    wrap.insertAdjacentHTML('beforeend', `<div class="bmlayer" data-act="bmadd" data-k="${k}" data-i="${i}"></div>` +
+    wrap.insertAdjacentHTML('beforeend', `<div class="bmlayer" data-act="bmadd" data-k="${k}" data-i="${i}"></div><button class="pgdel" data-act="pgdel" data-k="${k}" data-i="${i}">🗑 この写真を削除</button>` +
       list.map((m, x) => `<button class="bmt ${sus.has(m) ? 'u' : ''}" data-act="bmedit" data-k="${k}" data-i="${i}" data-x="${x}" style="top:${(m.y*100).toFixed(2)}%">${m.n}${sus.has(m) ? '?' : ''}</button>`).join(''));
   };
   document.querySelectorAll('#docq .pg:not(.note), #padProb .pg').forEach(w => put(w, 'p', +w.dataset.i));
@@ -3581,22 +3594,79 @@ function bmStep(d){
   if(j < 0 || j >= nums.length){ toast(d > 0 ? '最後の問題です' : '最初の問題です'); return; }
   goBm(nums[j]);
 }
+const BM_MSG = '見出しをタップ → 番号を追加／番号をタップ → 修正・削除／写真の右上の 🗑 → 写真を削除';
 function bmToggle(on){
   if(!docv) return;
   docv.bmEdit = on === undefined ? !docv.bmEdit : on;
+  if(!docv.bmEdit) docv.bmAddN = null;
   document.body.classList.toggle('bm-edit', docv.bmEdit);
-  document.querySelectorAll('.bmbtn').forEach(b => b.classList.toggle('on', docv.bmEdit));
-  if(docv.bmEdit) toast('問題の見出しをタップ → 番号を追加。番号をタップ → 修正・削除');
+  const msg = document.getElementById('bmbarmsg'); if(msg) msg.innerHTML = docv.bmAddN ? `<b>${ROLE[docv.bmAddN.pane]}</b>の「<b>問題 ${docv.bmAddN.n}</b>」の見出しをタップしてください` : BM_MSG;
+}
+// タップした場所の切り抜き（手で追加した番号も、チェック画面で写真と見くらべられるように）
+function tapThumb(wrap, xf, yf){
+  const img = wrap.querySelector('img'); if(!img || !img.naturalWidth) return undefined;
+  try{
+    const W = img.naturalWidth, H = img.naturalHeight, sw = W*0.52, sh = sw*0.18, sx = Math.max(0, Math.min(W - sw, xf*W - sw*0.2)), sy = Math.max(0, Math.min(H - sh, yf*H - sh*0.5));
+    const c = document.createElement('canvas'); c.width = 252; c.height = Math.round(252*sh/sw); c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    const u = c.toDataURL('image/jpeg', 0.7); c.width = c.height = 0; return u;
+  }catch(e){ return undefined; }
 }
 function bmAdd(b, e){
   if(!docv || !docv.bmEdit) return;
-  const r = b.getBoundingClientRect(), y = Math.min(0.99, Math.max(0, (e.clientY - r.top) / r.height - 0.01)), k = b.dataset.k, i = +b.dataset.i;
-  const pane = k === 'a' ? 'ans' : (docv.d.pages[i].role === 'sheet' ? 'sheet' : 'prob');
-  const before = bmPane(pane).filter(v => v.i < i || (v.i === i && v.m.y < y)).pop();
-  const v = prompt(`${ROLE[pane]}：ここは問題何番？`, before ? before.m.n + 1 : 1); if(v == null) return;
-  const n = parseInt(toNum(v), 10); if(!(n >= 1)) return;
-  const store = k === 'a' ? docv.bm.a : docv.bm.p; (store[i] = store[i] || []).push({y, n, c:true}); store[i].sort((a, c) => a.y - c.y);
+  const r = b.getBoundingClientRect(), yt = (e.clientY - r.top) / r.height, y = Math.min(0.99, Math.max(0, yt - 0.01)), k = b.dataset.k, i = +b.dataset.i;
+  const pane = k === 'a' ? 'ans' : (docv.d.pages[i].role === 'sheet' ? 'sheet' : 'prob'), want = docv.bmAddN;
+  let n;
+  if(want){   // チェック画面の「抜けている番号」から来たとき：番号は決まっているので、場所をタップするだけ
+    if(want.pane !== pane){ toast(`${ROLE[want.pane]}のページをタップしてください`); return; }
+    n = want.n;
+  } else {
+    const before = bmPane(pane).filter(v => v.i < i || (v.i === i && v.m.y < y)).pop();
+    const v = prompt(`${ROLE[pane]}：ここは問題何番？`, before ? before.m.n + 1 : 1); if(v == null) return;
+    n = parseInt(toNum(v), 10); if(!(n >= 1)) return;
+  }
+  const store = k === 'a' ? docv.bm.a : docv.bm.p;
+  (store[i] = store[i] || []).push({y, n, c:true, t:tapThumb(b.parentElement, (e.clientX - r.left) / r.width, yt)}); store[i].sort((a, c) => a.y - c.y);
   saveBm(); renderBm();
+  if(want){ bmToggle(false); toast(`${ROLE[pane]}に「問題 ${n}」を追加しました`); bmr = null; bmReview(); }
+}
+// 番号の抜け：全体で出てくる番号の範囲のうち、その種類にないもの
+function bmGaps(){
+  const nums = p => new Set(bmPane(p).map(v => v.m.n)), P = nums('prob'), S2 = nums('sheet'), A = nums('ans'), all = [...P, ...S2, ...A];
+  if(!all.length) return {prob:[], sheet:[], ans:[]};
+  const lo = Math.min(...all), hi = Math.max(...all), miss = set => { const o = []; for(let n = lo; n <= hi; n++) if(!set.has(n)) o.push(n); return o; };
+  const it = docv.items[docv.qi];
+  return {prob: it.prob.length ? miss(P) : [], sheet: it.sheet.length ? miss(S2) : [], ans: it.ans.length ? miss(A) : []};
+}
+const bmGapCount = () => { const g = bmGaps(); return g.prob.length + g.ans.length; };   // 解答用紙は「ない問題」も普通にあるので数えない
+function bmrAdd(pane, n){   // 抜けている番号を追加：その種類のページを出して、見出しをタップしてもらう
+  if(!docv) return;
+  if(bmr && bmr.sel && bmr.buf) bmrCommit();
+  bmr = null; closeModal();
+  docv.bmAddN = {pane, n}; bmToggle(true);
+  const hasSheet = docv.items[docv.qi].sheet.length > 0;
+  if(pane === 'ans') openPad('ans'); else if(pane === 'prob' && hasSheet) openPad('prob');
+  // 前後の番号の近くまでスクロールしておく
+  const near = bmPane(pane).map(v => v.m.n).filter(x => x < n).pop() ?? bmPane(pane).map(v => v.m.n).find(x => x > n);
+  if(near != null) bmScroll(pane, near, false);
+  toast(`${ROLE[pane]}の「問題 ${n}」の見出しをタップしてください`);
+}
+async function delPage(b){
+  if(!docv) return;
+  const k = b.dataset.k, i = +b.dataset.i, id = docv.id;
+  if(!confirm('この写真を削除しますか？\n（この写真への書き込みと番号も消えます。元に戻せません）')) return;
+  flushDocInk();
+  try{
+    const d = toV2(await DB.doc(id)), pg = (k === 'a' ? d.ans : d.pages)[i]; if(!pg) return;
+    pg.del = true; pg.blob = new Blob([]);   // 場所だけ残して中身を消す（ほかの写真の番号がずれないように）
+    await DB.putDoc(d);
+    (k === 'a' ? docv.bm.a : docv.bm.p)[i] = [];
+    await DB.putInk(id+':bm', docv.bm);
+    if(k !== 'a'){ await DB.putInk(id+':'+i, []); if(docv.marks.st && docv.marks.st[i]){ delete docv.marks.st[i]; await DB.putInk(id+':marks', docv.marks); } }
+    const q = docv.qi, cur = docv.bmCur, tab = ['ans','prob'].find(t => document.body.classList.contains('pad-'+t));
+    await openDoc(id, {q, edit:true, tab});
+    if(docv && cur != null && bmNumbers().includes(cur)) docv.bmCur = cur;
+    toast('写真を削除しました');
+  }catch(e){ console.warn(e); toast('削除できませんでした'); }
 }
 function bmEdit(b){
   if(!docv || !docv.bmEdit) return;
@@ -3661,7 +3731,13 @@ function bmrRender(){
     return `<button class="bmc ${why ? 'sus' : ''} ${m.c ? 'ok' : ''} ${sel ? 'sel' : ''}" data-act="bmrsel" data-id="${v.id}">
       ${m.t ? `<img src="${m.t}" alt="">` : '<span class="noimg">写真なし</span>'}
       <b>${sel && bmr.buf ? esc(bmr.buf) + '<i>▏</i>' : m.n}${m.c ? ' <em>✓</em>' : ''}</b>${why ? `<small>${why}</small>` : ''}</button>`; };
-  const sec = pane => { const l = shown.filter(v => v.pane === pane); return l.length ? `<p class="label" style="margin:12px 0 6px">${ROLE[pane]}（${all.filter(v => v.pane === pane).length}か所）</p><div class="bmgrid">${l.map(card).join('')}</div>` : ''; };
+  const gaps = bmGaps(), it = docv.items[docv.qi];
+  const sec = pane => {
+    if(!it[pane].length) return '';
+    const l = shown.filter(v => v.pane === pane), g = gaps[pane], soft = pane === 'sheet';
+    const gapHTML = g.length ? `<div class="gapbox ${soft ? 'soft' : ''}"><span>${soft ? '解答用紙が見つかっていない問題（ノートで解く問題ならこのままでOK）' : '⚠️ 抜けている番号'}　<small>タップ → 写真の見出しをタップして追加</small></span>
+      <div class="gapchips">${g.map(n => `<button class="gapchip" data-act="bmradd" data-pane="${pane}" data-n="${n}">＋ ${n}</button>`).join('')}</div></div>` : (soft ? '' : '<p class="sub" style="margin:0 0 6px;font-size:12px">✓ 番号の抜けはありません</p>');
+    return `<p class="label" style="margin:14px 0 6px">${ROLE[pane]}（${all.filter(v => v.pane === pane).length}か所${g.length && !soft ? `・<b class="r-bad">抜け ${g.length}</b>` : ''}）</p>${gapHTML}${l.length ? `<div class="bmgrid">${l.map(card).join('')}</div>` : ''}`; };
   const box = document.querySelector('#modal') ; let sheet = box.querySelector('.sheet');
   if(!sheet || !sheet.classList.contains('bmrsheet')){ box.innerHTML = '<div class="sheet bmrsheet"></div>'; sheet = box.querySelector('.sheet'); }
   const top = sheet.querySelector('.bmrbody')?.scrollTop || 0;
@@ -3670,11 +3746,10 @@ function bmrRender(){
     <div class="seg" style="margin-bottom:4px"><button class="${bmr.filter==='sus'?'on':''}" data-act="bmrfilter" data-v="sus">あやしいものだけ（${nSus}）</button><button class="${bmr.filter==='all'?'on':''}" data-act="bmrfilter" data-v="all">すべて（${all.length}）</button></div>
     ${noThumb ? `<p class="trap" style="margin:8px 0 0"><span>写真の切り抜きがありません</span>前のバージョンで付けた番号です。<button class="mini" data-act="bmauto">写真から読み取り直す</button> と、切り抜きつきで確認できます。</p>` : ''}
     ${!all.length ? '<p class="sub center" style="margin:20px 0">番号がまだありません。「写真から読み取り直す」か「ページ上で追加」を使ってください。</p>'
-      : !shown.length ? '<p class="center" style="margin:20px 0;font-weight:700">あやしい番号はありません 🎉<br><span class="sub" style="font-weight:400">念のため「すべて」でも確認できます</span></p>'
-      : ['prob','sheet','ans'].map(sec).join('')}
+      : (!shown.length ? `<p class="center" style="margin:14px 0 4px;font-weight:700">あやしい番号はありません${bmGapCount() ? '' : ' 🎉'}<br><span class="sub" style="font-weight:400">念のため「すべて」でも確認できます</span></p>` : '') + ['prob','sheet','ans'].map(sec).join('')}
     </div>
     <div class="bmpad">${bmr.sel ? `<div class="bmkeys">${[1,2,3,4,5,6,7,8,9,0].map(d => `<button class="ck" data-act="bmrkey" data-k="${d}">${d}</button>`).join('')}<button class="ck fn" data-act="bmrkey" data-k="←">←</button><button class="ck fn cl" data-act="bmrkey" data-k="del">番号を消す</button><button class="ck eq" data-act="bmrkey" data-k="ok">${bmr.buf ? '決定 →' : '合っている →'}</button></div>` : '<p class="sub center" style="margin:6px 0">直したい番号をタップしてください</p>'}
-      <div class="actions" style="margin-top:8px"><button class="btn ghost" data-act="bmrpage">ページ上で追加</button><button class="btn ghost" data-act="bmauto">読み取り直す</button><button class="btn primary" data-act="bmrclose">完了</button></div></div>`;
+      <div class="actions" style="margin-top:8px"><button class="btn ghost" data-act="bmrpage">ページ上で追加・写真の削除</button><button class="btn ghost" data-act="bmauto">読み取り直す</button><button class="btn primary" data-act="bmrclose">完了</button></div></div>`;
   sheet.querySelector('.bmrbody').scrollTop = top;
   sheet.querySelector('.bmc.sel')?.scrollIntoView({block:'nearest'});
 }
@@ -3727,7 +3802,7 @@ async function buildSetFile(id){
   const bm = await DB.ink(id+':bm').catch(() => null);
   const noteIdx = bm ? [...new Set([...Object.values(bm.p || {}), ...Object.values(bm.a || {})].flat().map(m => NOTE0 + m.n))] : [];
   for(const i of [...d.pages.keys(), ...noteIdx]){ const st = await DB.ink(id+':'+i).catch(() => null); if(st && st.length) ink[i] = st; }
-  const meta = pg => ({w:pg.w, h:pg.h, q:pg.q, role:pg.role, size:pg.blob.size, type:pg.blob.type || 'image/jpeg'});
+  const meta = pg => ({w:pg.w, h:pg.h, q:pg.q, role:pg.role, size:pg.blob.size, type:pg.blob.type || 'image/jpeg', del:pg.del || undefined});
   const head = new TextEncoder().encode(JSON.stringify({v:1, name:d.name, ts:d.ts, pages:d.pages.map(meta), ans:(d.ans || []).map(meta), marks, ink, bm}));
   const len = new Uint8Array(4); new DataView(len.buffer).setUint32(0, head.length, true);
   const blob = new Blob([SET_MAGIC, len, head, ...d.pages.map(p => p.blob), ...(d.ans || []).map(p => p.blob)], {type:'application/octet-stream'});
@@ -3759,7 +3834,7 @@ async function importSetFile(file){
     if(h.v !== 1 || !Array.isArray(h.pages)) throw new Error('format');
     let off = 12 + hl;
     const take = async m => { const b = new Blob([await file.slice(off, off + m.size).arrayBuffer()], {type:m.type || 'image/jpeg'}); off += m.size;
-      if(b.size !== m.size) throw new Error('format'); return {blob:b, w:m.w, h:m.h, q:m.q, role:m.role}; };
+      if(b.size !== m.size) throw new Error('format'); const pg = {blob:b, w:m.w, h:m.h, q:m.q, role:m.role}; if(m.del) pg.del = true; return pg; };
     const pages = []; for(const m of h.pages) pages.push(await take(m));
     const ans = []; for(const m of (h.ans || [])){ const pg = await take(m); delete pg.role; ans.push(pg); }
     const id = 'd' + Date.now();
@@ -4312,6 +4387,9 @@ const ACT = {
   bmrkey: b => bmrKey(b.dataset.k),
   bmrclose: () => bmrClose(),
   bmrpage: () => { bmrClose(); bmToggle(true); },
+  bmradd: b => bmrAdd(b.dataset.pane, +b.dataset.n),
+  pgdel: b => delPage(b),
+  pgdelmode: () => { bmToggle(true); toast('消したい写真の右上の「🗑 この写真を削除」を押してください（解答の写真は「📖 解答」を開くと出ます）'); window.scrollTo({top:0, behavior:'smooth'}); },
   bmadd: (b, e) => bmAdd(b, e),
   bmedit: b => bmEdit(b),
   bmauto: () => bmAuto(),
