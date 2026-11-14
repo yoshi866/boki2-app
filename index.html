@@ -643,6 +643,14 @@ body.bm-edit .pgdel{display:block}
 .gapchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .gapchip{border:1.5px solid var(--ng);background:var(--card);color:var(--ng);border-radius:999px;padding:5px 12px;font-size:14px;font-weight:800}
 .gapbox.soft .gapchip{border-color:var(--line);color:var(--sub);font-weight:700}
+
+.lostpg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px;text-align:center;background:var(--ng-weak);color:var(--text);font-size:13px}
+.lostpg b{color:var(--ng);font-size:15px}
+.lostbar{border:2px solid var(--ng)}
+.lostbtns{display:grid;gap:8px}
+.lostbtns .btn{margin:0;text-align:center;cursor:pointer}
+.lostbtns .btn small{display:block;font-size:11px;font-weight:500;color:var(--sub)}
+.anspg img,.pg img{background:#fff}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -2906,11 +2914,18 @@ function renderExams(){
    自分の過去問・問題集（PDF・写真）を取り込んで書き込む
    データは IndexedDB（このブラウザの中）に保存
    ========================================================= */
+/* 保存のしかた（IndexedDB）
+   docs … 問題セットの名前や、各ページの大きさ・種類など（文字データだけ）
+   img  … 写真そのもの。1枚ずつ、生のバイト列（ArrayBuffer）で保存
+   ink  … 書き込み・番号のしおり・○△× など
+   ※ 以前は写真を Blob のまま docs に入れていたが、iPad / iPhone の Safari では、アプリを開き直すと
+     保存した Blob が読めなくなることがある。バイト列で保存すればこの問題は起きない */
 const DB = {
   p: null,
   open(){ return this.p || (this.p = new Promise((res, rej) => {
-    const r = indexedDB.open('boki2_docs', 1);
-    r.onupgradeneeded = () => { r.result.createObjectStore('docs', {keyPath:'id'}); r.result.createObjectStore('ink'); };
+    const r = indexedDB.open('boki2_docs', 2);
+    r.onupgradeneeded = () => { const db = r.result, has = n => db.objectStoreNames.contains(n);
+      if(!has('docs')) db.createObjectStore('docs', {keyPath:'id'}); if(!has('ink')) db.createObjectStore('ink'); if(!has('img')) db.createObjectStore('img'); };
     r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
   })); },
   async run(store, mode, fn){
@@ -2922,8 +2937,43 @@ const DB = {
   putDoc(d){ return this.run('docs', 'readwrite', s => s.put(d)); },
   ink(k){ return this.run('ink', 'readonly', s => s.get(k)); },
   putInk(k, v){ return this.run('ink', 'readwrite', s => s.put(v, k)); },
-  async delDoc(d){ await this.run('docs', 'readwrite', s => s.delete(d.id)); await this.run('ink', 'readwrite', s => { s.delete(IDBKeyRange.bound(d.id+':', d.id+':\uffff')); }); },
+  img(k){ return this.run('img', 'readonly', s => s.get(k)); },
+  putImg(k, v){ return this.run('img', 'readwrite', s => s.put(v, k)); },
+  delImg(k){ return this.run('img', 'readwrite', s => s.delete(k)); },
+  async delDoc(d){ const all = IDBKeyRange.bound(d.id+':', d.id+':￿');
+    await this.run('docs', 'readwrite', s => s.delete(d.id)); await this.run('ink', 'readwrite', s => { s.delete(all); }); await this.run('img', 'readwrite', s => { s.delete(all); }); },
 };
+const imgKey = (id, kind, i) => `${id}:${kind}:${i}`;   // kind … 'p'（問題・解答用紙）／'a'（解答）
+async function pageBlob(id, kind, i){   // 保存してある写真を取り出す。なければ null
+  const r = await DB.img(imgKey(id, kind, i)).catch(() => null);
+  return r && r.b && r.b.byteLength ? new Blob([r.b], {type:r.t || 'image/jpeg'}) : null;
+}
+// 問題セットを保存。新しく足したページ（blob を持っている）の写真は img に移し、docs には文字データだけ残す
+async function saveDoc(d){
+  for(const [kind, list] of [['p', d.pages], ['a', d.ans || []]]) for(let i = 0; i < list.length; i++){
+    const pg = list[i]; delete pg.thumb; if(!pg.blob) continue;
+    const bl = pg.blob; delete pg.blob;
+    if(pg.del) continue;
+    const b = await bl.arrayBuffer();
+    if(b.byteLength) await DB.putImg(imgKey(d.id, kind, i), {b, t:bl.type || 'image/jpeg'}); else pg.lost = true;
+  }
+  d.fmt = 3; await DB.putDoc(d);
+}
+// 以前の形式（写真を Blob のまま docs に保存）から移す。もう読めなくなっている写真は lost の印を付ける
+async function migrateDoc(d){
+  toV2(d); let lost = 0;
+  for(const [kind, list] of [['p', d.pages], ['a', d.ans || []]]) for(let i = 0; i < list.length; i++){
+    const pg = list[i], bl = pg.blob; delete pg.blob;
+    if(pg.del || pg.lost) continue;
+    let b = null;
+    if(bl){ try{ b = await Promise.race([bl.arrayBuffer(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))]); }catch(e){ b = null; } }
+    if(b && b.byteLength) await DB.putImg(imgKey(d.id, kind, i), {b, t:bl.type || 'image/jpeg'});
+    else { pg.lost = true; lost++; }
+  }
+  d.fmt = 3; await DB.putDoc(d);
+  return lost;
+}
+const lostCount = d => [...d.pages, ...(d.ans || [])].filter(p => p.lost && !p.del).length;
 function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('load')); document.head.appendChild(s); }); }
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
 async function pdfPages(file, prog){
@@ -2992,13 +3042,18 @@ function toV2(d){
 async function renderDocList(){
   const box = document.getElementById('doclist'); if(!box) return;
   let docs = [];
-  try{ docs = (await DB.docs()).sort((a, b) => (b.opened||b.ts) - (a.opened||a.ts)); }
+  try{
+    docs = await DB.docs();
+    const old = docs.filter(d => d.fmt !== 3);
+    if(old.length){ box.innerHTML = '<p class="sub" style="margin:10px 0 0">⏳ 写真の保存形式を新しくしています…（閉じずにお待ちください）</p>'; for(const d of old) await migrateDoc(d); }
+    docs.sort((a, b) => (b.opened||b.ts) - (a.opened||a.ts));
+  }
   catch(e){ box.innerHTML = '<p class="sub" style="margin:10px 0 0">このブラウザでは保存領域が使えません（プライベートブラウズでは使えません）</p>'; return; }
   const marks = await Promise.all(docs.map(d => docMarks(d.id)));
   if(!document.getElementById('doclist')) return;
   box.innerHTML = docs.length ? docs.map((d, i) => { const n = docItems(d).length;
     return `<div class="docrow"><button class="exrow" data-act="docopen" data-id="${d.id}">
-      <span class="exl"><b>📄 ${esc(d.name)}</b><small>${docSummary(marks[i], n)}</small></span><span class="exs">›</span></button>
+      <span class="exl"><b>📄 ${esc(d.name)}</b><small>${docSummary(marks[i], n)}${lostCount(d) ? `<br><b class="r-bad">⚠ 写真${lostCount(d)}枚が読めません（開いて入れ直せます）</b>` : ''}</small></span><span class="exs">›</span></button>
       <button class="link" data-act="docshare" data-id="${d.id}" aria-label="ほかの端末に送る">📤</button>
       <button class="link" data-act="docdel" data-id="${d.id}" aria-label="削除">🗑</button></div>`; }).join('')
     : '<p class="sub" style="margin:10px 0 0">まだありません。教科書・問題集の 問題・解答用紙・解答 の写真を取り込みましょう。</p>';
@@ -3110,7 +3165,7 @@ async function revSave(){
         if(r === 'ans') d.ans.push(pg); else { pg.role = r; d.pages.push(pg); } });
       n = Math.max(n, q - q0 + 1);
     }
-    await DB.putDoc(d);
+    await saveDoc(d);
     let found = 0;
     try{
       const hd = document.querySelector('#modal .sheet h2');
@@ -3141,7 +3196,7 @@ async function wizImport(groups){
         pages.forEach(p => { p.q = q; if(r === 'ans') d.ans.push(p); else { p.role = r; d.pages.push(p); } });
       }
     }
-    await DB.putDoc(d);
+    await saveDoc(d);
     closeModal(); wiz = null;
     toast(w.q != null ? `問${w.q+1}にページを追加しました` : `${groups.length}問取り込みました`);
     openDoc(d.id, {q: w.q != null ? w.q : q0});
@@ -3162,7 +3217,7 @@ function clearDocQ(){
 function closeDoc(){
   if(!docv) return;
   clearDocQ();
-  [...docv.urls, ...docv.ansUrls].forEach(u => URL.revokeObjectURL(u));
+  docv.urlMap.forEach(u => URL.revokeObjectURL(u));
   document.body.classList.remove('has-ans', 'has-prob', 'bm-edit');
   if(['ans','prob'].some(t => document.body.classList.contains('pad-'+t))) setPadTab('memo');
   docv = null;
@@ -3195,13 +3250,13 @@ function setZoom(){
 }
 async function openDoc(id, opt = {}){
   const d = await DB.doc(id); if(!d){ toast('見つかりませんでした'); return; }
+  if(d.fmt !== 3) await migrateDoc(d);
   const marks = await docMarks(id);
   closeDoc();
   d.opened = Date.now(); DB.putDoc(d).catch(() => {});
   go('doc');
   const bm = (await DB.ink(id+':bm').catch(() => null)) || {p:{}, a:{}}; bm.p = bm.p || {}; bm.a = bm.a || {};
-  docv = {id, d, items:docItems(d), marks, bm, timers:{}, pending:{}, cache:{}, filter:false, zoom:1,
-          urls:d.pages.map(p => URL.createObjectURL(p.blob)), ansUrls:(d.ans || []).map(p => URL.createObjectURL(p.blob))};
+  docv = {id, d, items:docItems(d), marks, bm, timers:{}, pending:{}, cache:{}, filter:false, zoom:1, urlMap:new Map()};
   view.innerHTML = `
     <div class="qhead exhead"><div class="qtop"><button class="homebtn" data-act="home">← 一覧</button>
       <div class="qtop-r"><span class="prog doctitle">${esc(d.name)}</span><button class="homebtn ansbtn" data-act="docans"></button>${padBtnHTML()}</div></div>
@@ -3243,8 +3298,23 @@ function inkPage(i, wrap){
   else DB.ink(key).then(st => { if(st && st.length && docv === dv){ dv.cache[i] = st; if(!k.strokes.length){ k.strokes = st; k.redraw(); } } }).catch(() => {});
   return k;
 }
+const LOST_HTML = '<div class="lostpg"><b>📷 この写真は読めなくなっています</b><span>上の「写真を入れ直す」から、同じ写真を選び直してください。書き込みと番号は残っています。</span></div>';
+const pageImgHTML = (kind, i, p, label) => p.lost ? LOST_HTML : `<img data-k="${kind}" data-i="${i}" alt="${label}" draggable="false" decoding="async">`;
 const pageHTML = (i, label) => { const p = docv.d.pages[i];
-  return `<div class="pgwrap"><div class="inkwrap pg" data-i="${i}" style="aspect-ratio:${p.w}/${p.h}"><img src="${docv.urls[i]}" alt="${label}" draggable="false" loading="lazy" decoding="async"></div></div>`; };
+  return `<div class="pgwrap"><div class="inkwrap pg" data-i="${i}" style="aspect-ratio:${p.w}/${p.h}">${pageImgHTML('p', i, p, label)}</div></div>`; };
+// 写真を保存領域から読んで表示する（画面の近くに来たページだけ）
+async function loadPageImg(img){
+  if(!docv || img.dataset.ld) return; img.dataset.ld = '1';
+  const dv = docv, kind = img.dataset.k, i = +img.dataset.i, key = kind + ':' + i;
+  let u = dv.urlMap.get(key);
+  if(!u){
+    const bl = await pageBlob(dv.id, kind, i);
+    if(docv !== dv) return;
+    if(!bl){ img.outerHTML = LOST_HTML; return; }
+    u = dv.urlMap.get(key) || URL.createObjectURL(bl); dv.urlMap.set(key, u);
+  }
+  img.src = u;
+}
 function updateStampSum(){
   const el = document.getElementById('stsum'); if(!el || !docv) return;
   const t = stampTotals(docv.marks);
@@ -3271,7 +3341,10 @@ function showDocQ(qi){
   document.getElementById('docqsel').innerHTML = docv.items.map((_, i) => `<option value="${i}" ${i===qi?'selected':''}>${qLabel(i)} / ${n}問</option>`).join('');
   const ab = view.querySelector('.ansbtn'); ab.textContent = it.ans.length ? '📖 解答' : '📖 解答を追加';
   docv.noteIdx = null;
-  document.getElementById('docq').innerHTML = `<div id="notebox"></div>
+  const lostN = k => it[k].filter(i => (k === 'ans' ? docv.d.ans : docv.d.pages)[i].lost).length, anyLost = lostN('prob') + lostN('sheet') + lostN('ans');
+  document.getElementById('docq').innerHTML = `${anyLost ? `<div class="card lostbar"><b>⚠️ 読めなくなっている写真があります</b>
+      <p class="sub" id="lostmsg" style="margin:4px 0 8px">以前の保存方法の不具合で、アプリを開き直したときに写真が読めなくなっていました（今は直っています）。<b>同じ写真を、同じ順番で選び直す</b>と、書き込みと問題番号はそのまま使えます。</p>
+      <div class="lostbtns">${['prob','sheet','ans'].filter(lostN).map(k => `<label class="btn">${ROLE[k]}の写真を入れ直す<small>読めない${lostN(k)}枚ぶん、または全${it[k].length}枚</small><input type="file" class="refill" data-kind="${k}" accept="application/pdf,image/*" multiple hidden></label>`).join('')}</div></div>` : ''}<div id="notebox"></div>
     ${hasSheet ? `<div class="qbar"><span class="tag">解答用紙</span><button class="mini" data-act="docprob">📄 問題を横に表示</button></div>` : (it.prob.length ? '' : '<p class="sub">この問題には写真がありません。「＋ この問題にページを追加」から追加してください。</p>')}
     <div class="docpages">${main.map(i => pageHTML(i, hasSheet ? '解答用紙' : '問題')).join('')}</div>
     <div class="pgfoot"><span class="pgno">問${qi+1} / ${n}</span>
@@ -3283,12 +3356,15 @@ function showDocQ(qi){
   document.body.classList.toggle('has-ans', it.ans.length > 0);
   document.getElementById('padProb').innerHTML = hasSheet ? `<div class="zwrap" style="width:${docv.zoom*100}%">${it.prob.map(i => pageHTML(i, '問題')).join('')}</div>` : '';
   document.getElementById('padAns').innerHTML = `<div class="zwrap" style="width:${docv.zoom*100}%">${it.ans.map((j, k) => { const p = docv.d.ans[j];
-    return `<div class="anspg" data-j="${j}"><img src="${docv.ansUrls[j]}" alt="解答${k+1}" loading="lazy" decoding="async" style="aspect-ratio:${p.w}/${p.h}"></div><p class="pgno">解答 ${k+1} / ${it.ans.length}</p>`; }).join('')}</div>`;
+    return `<div class="anspg" data-j="${j}" style="aspect-ratio:${p.w}/${p.h}">${pageImgHTML('a', j, p, '解答' + (k+1))}</div><p class="pgno">解答 ${k+1} / ${it.ans.length}</p>`; }).join('')}</div>`;
   const g = new InkGroup('doc'); INKS.doc = g;
-  const io = root => new IntersectionObserver(es => es.forEach(e => { const k = INKS.doc === g && g.pages[+e.target.dataset.i]; if(!k) return; e.isIntersecting ? k.wake() : (k.cur || k.sleep()); }), {root, rootMargin:'1000px 0px'});
-  docv.io = [io(null), io(document.getElementById('padProb'))];
+  const io = root => new IntersectionObserver(es => es.forEach(e => {
+    if(e.isIntersecting){ const im = e.target.querySelector('img[data-k]'); if(im) loadPageImg(im); }
+    const k = e.target.classList.contains('pg') && INKS.doc === g && g.pages[+e.target.dataset.i]; if(!k) return; e.isIntersecting ? k.wake() : (k.cur || k.sleep()); }), {root, rootMargin:'1000px 0px'});
+  docv.io = [io(null), io(document.getElementById('padProb')), io(document.getElementById('padAns'))];
   view.querySelectorAll('#docq .pg').forEach(w => { inkPage(+w.dataset.i, w); docv.io[0].observe(w); });
   document.querySelectorAll('#padProb .pg').forEach(w => { inkPage(+w.dataset.i, w); docv.io[1].observe(w); });
+  document.querySelectorAll('#padAns .anspg').forEach(w => docv.io[2].observe(w));
   ['padProb','padAns'].forEach(id => delete document.getElementById(id).dataset.st);
   view.querySelector('.qnav').classList.toggle('single', n === 1);
   updateStampSum();
@@ -3502,7 +3578,7 @@ async function detectDoc(d, bm, prog){
       if(pg.del){ store[i] = []; continue; }
       if(store[i]) continue;
       prog && prog(`問題番号を探しています… ${++done}/${total}ページ`);
-      try{ store[i] = await detectPage(pg.blob); }catch(e){ store[i] = []; }
+      try{ const bl = await pageBlob(d.id, pane === 'ans' ? 'a' : 'p', i); store[i] = bl ? await detectPage(bl) : []; }catch(e){ store[i] = []; }
       fresh.push(...store[i]);
     }
     fixSeq(fresh, pane !== 'sheet'); found += fresh.length;
@@ -3657,8 +3733,8 @@ async function delPage(b){
   flushDocInk();
   try{
     const d = toV2(await DB.doc(id)), pg = (k === 'a' ? d.ans : d.pages)[i]; if(!pg) return;
-    pg.del = true; pg.blob = new Blob([]);   // 場所だけ残して中身を消す（ほかの写真の番号がずれないように）
-    await DB.putDoc(d);
+    pg.del = true; delete pg.lost;   // 場所だけ残して中身を消す（ほかの写真の番号がずれないように）
+    await DB.putDoc(d); await DB.delImg(imgKey(id, k === 'a' ? 'a' : 'p', i));
     (k === 'a' ? docv.bm.a : docv.bm.p)[i] = [];
     await DB.putInk(id+':bm', docv.bm);
     if(k !== 'a'){ await DB.putInk(id+':'+i, []); if(docv.marks.st && docv.marks.st[i]){ delete docv.marks.st[i]; await DB.putInk(id+':marks', docv.marks); } }
@@ -3681,7 +3757,9 @@ async function bmAuto(){
   if(bmNumbers().length && !confirm('問題番号を写真から読み取り直しますか？（いまの番号は置きかえます）')) return;
   const dv = docv, hd = document.querySelector('#modal.show .sheet h2');
   try{
-    const r = await detectDoc(dv.d, {p:{}, a:{}}, t => hd ? hd.textContent = '⏳ ' + t : toast(t));
+    const init = {p:{}, a:{}};   // 写真が読めなくなっているページの番号は、消さずに残す
+    dv.d.pages.forEach((pg, i) => { if(pg.lost && dv.bm.p[i]) init.p[i] = dv.bm.p[i]; }); (dv.d.ans || []).forEach((pg, i) => { if(pg.lost && dv.bm.a[i]) init.a[i] = dv.bm.a[i]; });
+    const r = await detectDoc(dv.d, init, t => hd ? hd.textContent = '⏳ ' + t : toast(t));
     if(docv !== dv) return;
     dv.bm = r.bm; saveBm(); renderBm();
     if(!r.found) toast('番号の四角が見つかりませんでした。「ページ上で追加」で手で付けられます');
@@ -3802,10 +3880,11 @@ async function buildSetFile(id){
   const bm = await DB.ink(id+':bm').catch(() => null);
   const noteIdx = bm ? [...new Set([...Object.values(bm.p || {}), ...Object.values(bm.a || {})].flat().map(m => NOTE0 + m.n))] : [];
   for(const i of [...d.pages.keys(), ...noteIdx]){ const st = await DB.ink(id+':'+i).catch(() => null); if(st && st.length) ink[i] = st; }
-  const meta = pg => ({w:pg.w, h:pg.h, q:pg.q, role:pg.role, size:pg.blob.size, type:pg.blob.type || 'image/jpeg', del:pg.del || undefined});
-  const head = new TextEncoder().encode(JSON.stringify({v:1, name:d.name, ts:d.ts, pages:d.pages.map(meta), ans:(d.ans || []).map(meta), marks, ink, bm}));
+  const empty = new Blob([]), pb = await Promise.all(d.pages.map((p, i) => p.del ? null : pageBlob(id, 'p', i))), ab = await Promise.all((d.ans || []).map((p, i) => p.del ? null : pageBlob(id, 'a', i)));
+  const meta = (pg, bl) => ({w:pg.w, h:pg.h, q:pg.q, role:pg.role, size:bl ? bl.size : 0, type:(bl && bl.type) || 'image/jpeg', del:pg.del || undefined, lost:(!bl && !pg.del) || undefined});
+  const head = new TextEncoder().encode(JSON.stringify({v:1, name:d.name, ts:d.ts, pages:d.pages.map((p, i) => meta(p, pb[i])), ans:(d.ans || []).map((p, i) => meta(p, ab[i])), marks, ink, bm}));
   const len = new Uint8Array(4); new DataView(len.buffer).setUint32(0, head.length, true);
-  const blob = new Blob([SET_MAGIC, len, head, ...d.pages.map(p => p.blob), ...(d.ans || []).map(p => p.blob)], {type:'application/octet-stream'});
+  const blob = new Blob([SET_MAGIC, len, head, ...pb.map(x => x || empty), ...ab.map(x => x || empty)], {type:'application/octet-stream'});
   const fname = d.name.replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 40) + '.boki2';
   return {file: new File([blob], fname, {type:'application/octet-stream'}), d};
 }
@@ -3834,11 +3913,11 @@ async function importSetFile(file){
     if(h.v !== 1 || !Array.isArray(h.pages)) throw new Error('format');
     let off = 12 + hl;
     const take = async m => { const b = new Blob([await file.slice(off, off + m.size).arrayBuffer()], {type:m.type || 'image/jpeg'}); off += m.size;
-      if(b.size !== m.size) throw new Error('format'); const pg = {blob:b, w:m.w, h:m.h, q:m.q, role:m.role}; if(m.del) pg.del = true; return pg; };
+      if(b.size !== m.size) throw new Error('format'); const pg = {blob:b, w:m.w, h:m.h, q:m.q, role:m.role}; if(m.del) pg.del = true; if(m.lost) pg.lost = true; return pg; };
     const pages = []; for(const m of h.pages) pages.push(await take(m));
     const ans = []; for(const m of (h.ans || [])){ const pg = await take(m); delete pg.role; ans.push(pg); }
     const id = 'd' + Date.now();
-    await DB.putDoc({id, name:String(h.name || '受け取った問題').slice(0, 60), v:2, pages, ans, ts:Date.now()});
+    await saveDoc({id, name:String(h.name || '受け取った問題').slice(0, 60), v:2, pages, ans, ts:Date.now()});
     for(const [i, st] of Object.entries(h.ink || {})) if(Array.isArray(st) && (pages[i] || +i >= NOTE0)) await DB.putInk(id+':'+i, st);
     if(h.bm && typeof h.bm === 'object') await DB.putInk(id+':bm', {p:h.bm.p || {}, a:h.bm.a || {}});
     if(h.marks && Object.keys(h.marks).length) await DB.putInk(id+':marks', h.marks);
@@ -3849,6 +3928,22 @@ async function importSetFile(file){
     toast(e && e.message === 'format' ? 'このアプリの共有ファイル（.boki2）ではないようです' : '取り込めませんでした（容量不足の可能性）');
     renderDocList();
   }
+}
+// 読めなくなった写真を選び直す：読めない枚数ぶん（その場所へ順に）、または その種類の全部（全部を順に置きかえ）
+async function refillPages(kind, files){
+  if(!docv || !files.length) return;
+  const id = docv.id, qi = docv.qi, it = docv.items[qi], isA = kind === 'ans', meta = isA ? docv.d.ans : docv.d.pages;
+  const slots = it[kind], lost = slots.filter(i => meta[i].lost), msg = document.getElementById('lostmsg');
+  try{
+    const pages = await filesToPages(files, t => { if(msg) msg.textContent = '⏳ ' + t; });
+    const target = pages.length === lost.length ? lost : pages.length === slots.length ? slots : null;
+    if(!target){ toast(`枚数が合いません（選んだのは${pages.length}枚）。読めない${lost.length}枚ぶん、または${ROLE[kind]}の全${slots.length}枚を選んでください`); openDoc(id, {q:qi}); return; }
+    const d = await DB.doc(id), list = isA ? d.ans : d.pages;
+    for(const [x, i] of target.entries()){ const pg = pages[x]; await DB.putImg(imgKey(id, isA ? 'a' : 'p', i), {b:await pg.blob.arrayBuffer(), t:pg.blob.type || 'image/jpeg'}); list[i].w = pg.w; list[i].h = pg.h; delete list[i].lost; }
+    await DB.putDoc(d);
+    toast(`${ROLE[kind]}の写真を${target.length}枚入れ直しました`);
+    openDoc(id, {q:qi});
+  }catch(e){ importError(e); openDoc(id, {q:qi}); }
 }
 async function delDoc(id){
   const d = await DB.doc(id); if(!d) return;
@@ -4468,6 +4563,7 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => {
   if(e.target.id === 'docqsel'){ showDocQ(+e.target.value); return; }
   if(e.target.id === 'bmsel'){ goBm(+e.target.value); return; }
+  if(e.target.classList.contains('refill')){ const f = [...e.target.files], k = e.target.dataset.kind; e.target.value = ''; refillPages(k, f); return; }
   if(e.target.classList.contains('wizfile')){ wizSet(e.target.dataset.role, [...e.target.files]); return; }
   if(e.target.id === 'setfile'){ const f = e.target.files[0]; e.target.value = ''; if(f) importSetFile(f); return; }
   if(e.target.id === 'bulkfile' && wiz){ wiz.bulk = [...e.target.files]; bulkPreview(); return; }
