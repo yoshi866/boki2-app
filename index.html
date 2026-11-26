@@ -341,10 +341,10 @@ body.padable.pad-on #pad{display:flex}
   body.padable.pad-on.pad-left{padding-right:0;padding-left:var(--padw)}
 }
 @media (max-width:899.98px){
-  #pad{left:0;right:0;bottom:0;height:50vh;border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.14);padding-bottom:env(safe-area-inset-bottom)}
-  body.padable.pad-on #view{padding-bottom:calc(50vh + 24px)}
-  body.padable.pad-on .actions.sticky,body.padable.pad-on .oxbtns.sticky{bottom:50vh}
-  body.padable.pad-on .toast{bottom:calc(50vh + 80px)}
+  #pad{left:0;right:0;bottom:0;height:var(--padh);border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.14);padding-bottom:env(safe-area-inset-bottom);transition:height .2s}
+  body.padable.pad-on #view{padding-bottom:calc(var(--padh) + 24px)}
+  body.padable.pad-on .actions.sticky,body.padable.pad-on .oxbtns.sticky{bottom:var(--padh)}
+  body.padable.pad-on .toast{bottom:calc(var(--padh) + 80px)}
 }
 
 /* ---------- 本試験形式 ---------- */
@@ -423,10 +423,6 @@ body.padable.pad-on #pad{display:flex}
 .padtabs{display:none;margin:0;flex:0 0 auto}
 .padtabs button{padding:6px 10px;font-size:13px}
 .padtabs{display:flex}
-.padtabs .tab-ans{display:none}
-body.has-ans .padtabs .tab-ans{display:block}
-.padtabs .tab-prob{display:none}
-body.has-prob .padtabs .tab-prob{display:block}
 #padProb{display:none}
 body.pad-prob #padProb{display:block}
 body.pad-prob #padInk,body.pad-prob #padAns{display:none}
@@ -458,8 +454,6 @@ body.pad-prob .zbtn,body.pad-ans .zbtn{display:inline-flex}
 .bgrid.rev figure.cont img{opacity:.75}
 .bgrid.rev img{aspect-ratio:3/4;object-fit:cover}
 .padhead>b{display:none}
-@media (max-width:520px){ .padtabs span{display:none} }
-@media (max-width:440px){ #pad .inkbar [data-op=redo], #pad .inkbar [data-op=blue], #pad .inkbar .sp{display:none} .padtabs button{padding:6px 7px} }
 body.pad-calc #padInk{display:none}
 body.pad-calc #pad .inkbar{display:none}
 body.pad-calc #pad .padhead{justify-content:space-between}
@@ -562,7 +556,6 @@ body.pad-ans #pad .padhead{justify-content:space-between}
 .extools .inkbar{flex:1 0 auto;flex-wrap:nowrap}
 .extools>*{flex-shrink:0}
 /* メモの上の段：選んでいるタブだけ文字を出して、はみ出さないように */
-.padtabs button:not(.on) span{display:none}
 .padhead .tool{min-width:36px;padding:0 6px}
 .padhead .inkbar{min-width:0}
 @media (max-width:520px){
@@ -651,6 +644,60 @@ body.bm-edit .pgdel{display:block}
 .lostbtns .btn{margin:0;text-align:center;cursor:pointer}
 .lostbtns .btn small{display:block;font-size:11px;font-weight:500;color:var(--sub)}
 .anspg img,.pg img{background:#fff}
+
+/* ---------- メモ・電卓・問題・解答のパネル ---------- */
+body{--padh:52vh}
+body.pad-calc{--padh:min(560px, 82vh)}   /* 電卓はキーが6段あるので、少し高くする */
+body.pad-tall{--padh:84vh}
+@supports (height:1dvh){
+  body{--padh:52dvh}
+  body.pad-calc{--padh:min(560px, 82dvh)}
+  body.pad-tall{--padh:84dvh}
+}
+.grab{display:none}
+.padhead{gap:6px;padding:8px 10px}
+.padtabs{display:flex;flex:0 1 auto;min-width:0;margin:0}
+.padtabs button{display:none;align-items:center;justify-content:center;gap:3px;padding:6px 11px;font-size:13px;white-space:nowrap;color:var(--sub)}
+.padtabs button i{font-style:normal;font-size:15px;line-height:1}
+.padtabs .tab-memo,.padtabs .tab-calc,body.has-prob .padtabs .tab-prob,body.has-ans .padtabs .tab-ans{display:inline-flex}
+.padtabs button.on{background:var(--accent);color:var(--accent-text);font-weight:800;box-shadow:none}
+.padhead .sp{flex:1}
+.sizebtn{display:none}
+.closebtn{font-size:15px}
+.padtools{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.padtools::-webkit-scrollbar{display:none}
+.padtools .inkbar{flex:1 0 auto;flex-wrap:nowrap}
+.padtools .zbtn{margin-left:auto;white-space:nowrap}
+body.pad-calc .padtools{display:none}
+body.pad-prob .padtools .inkbar,body.pad-ans .padtools .inkbar{display:none}
+/* 電卓：キーはパネルの高さに合わせて伸び縮みする（はみ出さない） */
+.ckeys{grid-auto-rows:minmax(0,1fr)}
+.ck{min-height:0}
+@media (max-width:899.98px){
+  .grab{display:block;width:100%;height:16px;border:none;background:none;padding:0;cursor:pointer;flex:0 0 auto}
+  .grab::after{content:"";display:block;width:44px;height:5px;border-radius:3px;background:var(--line);margin:6px auto 0}
+  .padhead{padding:2px 10px 8px}
+  .sizebtn{display:inline-flex;gap:3px;font-size:13px;white-space:nowrap}
+  .sizebtn i{font-style:normal}
+  .calcui{padding:8px 10px;gap:6px;max-width:none}
+  .cdisp{padding:4px 12px}
+  .cdisp b{font-size:30px}
+  .ctape{max-height:38px}
+  .ckeys{gap:7px}
+  .ck{font-size:24px;border-radius:14px}
+  .ck.fn{font-size:16px}
+}
+@media (max-width:420px){
+  .padhead{gap:5px;padding-left:8px;padding-right:8px}
+  .padtabs button{padding:6px 7px;font-size:12px;gap:2px}
+  .padtabs button i{font-size:14px}
+  .sizebtn{padding:0 7px;font-size:12px}
+  .padhead .tool{min-width:36px}
+}
+@media (max-width:380px){ .sizebtn span{display:none} }
+@media (max-width:340px){ .padtabs button span{display:none} }
+/* 文書の画面：スタンプがまだないときの説明は、狭い画面では出さない */
+@media (max-width:520px){ .stsum .sub{display:none} }
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -4382,12 +4429,22 @@ document.addEventListener('keydown', e => {
 /* ---------- 計算メモ（画面の右側／下側に出る手書き用紙） ---------- */
 function setupPad(){
   document.body.insertAdjacentHTML('beforeend', `<aside id="pad" aria-label="計算メモ">
-    <div class="padhead"><b>✏️ 計算メモ</b><div class="seg padtabs"><button class="on" data-act="padtab" data-v="memo">✏️<span> メモ</span></button><button data-act="padtab" data-v="calc">🧮<span> 電卓</span></button><button class="tab-prob" data-act="padtab" data-v="prob">📄<span> 問題</span></button><button class="tab-ans" data-act="padtab" data-v="ans">📖<span> 解答</span></button></div>${inkBarHTML('pad')}<button class="tool zbtn" data-act="padzoom" aria-label="拡大">🔍</button><button class="tool sidebtn" data-act="padside" aria-label="メモを左右に移動">⇆</button><button class="tool" data-act="pad" aria-label="計算メモを閉じる">✕</button></div>
+    <button class="grab" data-act="padsize" aria-label="パネルの大きさを変える"></button>
+    <div class="padhead"><div class="seg padtabs" role="tablist">${[['memo','✏️','メモ'],['calc','🧮','電卓'],['prob','📄','問題'],['ans','📖','解答']].map(([v, i, l]) => `<button class="tab-${v} ${v === 'memo' ? 'on' : ''}" role="tab" data-act="padtab" data-v="${v}"><i>${i}</i><span>${l}</span></button>`).join('')}</div>
+      <span class="sp"></span><button class="tool sizebtn" data-act="padsize" aria-label="パネルを大きくする"><i>⬆</i><span>大きく</span></button><button class="tool sidebtn" data-act="padside" aria-label="パネルを左右に移動">⇆</button><button class="tool closebtn" data-act="pad" aria-label="パネルを閉じる">✕</button></div>
+    <div class="padtools">${inkBarHTML('pad')}<button class="tool zbtn" data-act="padzoom" aria-label="拡大">🔍 拡大</button></div>
     <div class="inkwrap padpaper" id="padInk"></div><div class="padans padprob" id="padProb"></div><div class="padans" id="padAns"></div>${calcHTML()}</aside>`);
   INKS.pad = new Ink(document.getElementById('padInk'), {name:'pad', width:2, noScroll:true});
   syncBar('pad');
   document.body.classList.toggle('pad-on', !!S.set.pad);
   document.body.classList.toggle('pad-left', !!S.set.padLeft);
+  setPadTall(!!S.set.padTall, true);
+}
+// iPhone など縦長の画面：下のパネルの大きさを切り替える（ふつう／大きく）
+function setPadTall(on, quiet){
+  if(!quiet){ S.set.padTall = on; save(); }
+  document.body.classList.toggle('pad-tall', on);
+  document.querySelectorAll('.sizebtn').forEach(b => { b.innerHTML = on ? '<i>⬇</i><span>小さく</span>' : '<i>⬆</i><span>大きく</span>'; b.setAttribute('aria-label', on ? 'パネルを小さくする' : 'パネルを大きくする'); });
 }
 function setPadSide(left){
   S.set.padLeft = left; save();
@@ -4395,7 +4452,7 @@ function setPadSide(left){
   toast(left ? '計算メモを左側に表示します（左利き用）' : '計算メモを右側に表示します');
 }
 function setPadable(on){ document.body.classList.toggle('padable', on); }
-function padBtnHTML(){ return `<button class="homebtn padbtn ${S.set[padKey()]?'on':''}" data-act="pad" aria-label="計算メモ">✏️ メモ</button>`; }
+function padBtnHTML(){ return `<button class="homebtn padbtn ${S.set[padKey()]?'on':''}" data-act="pad" aria-label="メモ・電卓のパネルを開く／閉じる">✏️ メモ・電卓</button>`; }
 function newPage(){ const k = INKS.pad; if(!k) return; k.clear(); if(k.tool === 'eraser') k.setTool('ink'); } // 問題が変わったら計算メモを新しいページに（↶で戻せる）
 
 /* =========================================================
@@ -4446,6 +4503,7 @@ const ACT = {
   pad: () => {
     const k = padKey(); S.set[k] = !S.set[k]; save();
     document.body.classList.toggle('pad-on', S.set[k]);
+    if(S.set[k] && !S.seenPadTip){ S.seenPadTip = true; save(); toast('パネル上のタブで「メモ・電卓・問題・解答」を切り替えられます'); }
     document.querySelectorAll('.padbtn').forEach(x => x.classList.toggle('on', S.set[k]));
   },
   padside: () => setPadSide(!S.set.padLeft),
@@ -4508,6 +4566,7 @@ const ACT = {
   wizbulk: () => { if(!wiz || !wiz.bulk.length) return; const g = wiz.group, roles = BULK_ROLES[g], groups = [];
     wiz.bulk.forEach((file, i) => { const gi = Math.floor(i/g); (groups[gi] = groups[gi] || {prob:[], sheet:[], ans:[]})[roles[i%g]].push(file); }); wizImport(groups); },
   padtab: b => setPadTab(b.dataset.v),
+  padsize: () => setPadTall(!document.body.classList.contains('pad-tall')),
   ck: b => calcKey(b.dataset.k),
   calcins: () => calcInsert(),
 
